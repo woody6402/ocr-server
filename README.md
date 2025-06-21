@@ -1,3 +1,5 @@
+... work in progress
+
 # 🔍 Segment Editor + OCR for Meter Readings
 
 A Flask-based web tool for interactive configuration and recognition of analog and digital meter displays – using TFLite models, Tesseract OCR, and image segmentation.
