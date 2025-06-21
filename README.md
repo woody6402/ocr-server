@@ -1,6 +1,7 @@
 # ocr-server
 
 This projects creates a docker image which can process pictures of meters and extract the values.
+
 Status: concept work
 
 Currently it's using the following models:
