@@ -15,6 +15,14 @@ from werkzeug.utils import secure_filename
 from flask import redirect, url_for
 from flask import send_from_directory
 
+MODEL_MAP = {
+    "digital-cont": "dig-cont_0900_s3_q",
+    "digital-class11": "dig-class11_2000_s2_q",    
+    "digital-class100": "dig-class100-0180-s2-q",    
+    "analog": "ana-cont_1505_s2_q",
+    "tesseract": "tesseract"    
+}
+
 logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
@@ -72,7 +80,7 @@ def run_digit_model(image: Image.Image, model_name: str) -> dict:
 
     output_data = interpreter.get_tensor(output_details[0]['index'])[0]
     predicted_class = int(np.argmax(output_data))
-    logging.info(f"[DIFITAL MODEL] Digit: {predicted_class}")
+    logging.info(f"[DIGITAL MODEL] Digit: {predicted_class}")
 
     return {
         "class": predicted_class,
@@ -159,7 +167,7 @@ def segment_and_ocr():
 
     for key, section in definition.items():
         model = section.get("model", "tesseract")
-        logging.info(f"[PIC Parsing] Seciton: {key}, Model: {model}")
+        logging.info(f"[PIC Parsing] Section: {key}, Model: {model}")
         if "predecimal" in section or "postdecimal" in section:
             digits = []
             for group in ["predecimal", "postdecimal"]:
@@ -245,11 +253,7 @@ def save_segments():
 def serve_image(filename):
     return send_from_directory("images", filename)
 
-MODEL_MAP = {
-    "digital": "dig-cont_0900_s3_q",
-    "analog": "ana-cont_1500_s2_q",
-    "tesseract": "tesseract"    
-}
+
 
 @app.route("/test-config", methods=["POST"])
 def test_config():
