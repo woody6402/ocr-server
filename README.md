@@ -16,7 +16,7 @@ A Flask-based web tool for interactive configuration and recognition of analog a
 
 ## 🖼️ Screenshot
 
-<img src="SegmentEditor.png" alt="Segment Editor UI" width="700"/>
+<img src="SegmentEditor.png" alt="Segment Editor UI" width="400"/>
 
 ## 🧑‍💻 Getting Started Locally
 
