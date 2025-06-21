@@ -23,5 +23,9 @@ watermeter:
     model: ana-cont_1500_s2_q
     rects:
     - [443, 232, 96, 93]
+  t1:
+    model: tesseract
+    rects:
+      - [305, 188, 162, 30]
     
 
