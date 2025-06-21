@@ -65,19 +65,19 @@
   <h2>Segment Editor</h2>
 
   <label for="identifierInput">Meter name:</label>
-  <input type="text" id="identifierInput" value="zaehler" />
+  <input type="text" id="identifierInput" value="meter-1" />
 
   <br><br>
 
   <label for="sectionInput">New segment:</label>
-  <input type="text" id="sectionInput" placeholder="anzeige1" />
+  <input type="text" id="sectionInput" placeholder="digital-1" />
   <button onclick="addSection()">Add</button>
 
   <br><br>
 
   <label for="sectionSelect">Choose segment:</label>
   <select id="sectionSelect" onchange="updateOutput()">
-      <option value="seg1">seg1</option>
+      <option value="digital-1">digital-1</option>
   </select>
   <button onclick="deleteCurrentSection()">Delete</button>
 
@@ -92,8 +92,8 @@
   
 <label for="subgroupSelect">Group:</label>
 <select id="subgroupSelect">
-  <option value="vorkomma">vorkomma</option>
-  <option value="nachkomma">nachkomma</option>
+  <option value="predecimal">predecimal</option>
+  <option value="postdecimal">postdecimal</option>
   <option value="rects">rects</option>
 </select>  
 <br>
@@ -101,6 +101,7 @@
 <div style="margin-top: 10px;">
   <button onclick="sendTestConfig(false)">🧪 Test</button>
   <button onclick="sendTestConfig(true)">💾 Save</button>
+  <button onclick="sendImageToSegment()">🔍 Scan</button>
 </div>
 
 
@@ -116,7 +117,7 @@
 
   <textarea id="output" readonly></textarea>
 
-  <script>
+<script>
     const img = document.getElementById("sourceImage");
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
@@ -173,7 +174,7 @@
 let group = "rects";  // Default für analog/tesseract
 
 if (modelType === "digital") {
-  group = document.getElementById("subgroupSelect").value || "vorkomma";
+  group = document.getElementById("subgroupSelect").value || "predecimal";
 }  
 
         segments[activeSection].push({
@@ -221,8 +222,8 @@ function redraw() {
   };
 
   const colors = {
-    vorkomma: "#007bff",   // Blau
-    nachkomma: "#fd7e14",  // Orange
+    predecimal: "#007bff",   // Blau
+    postdecimal: "#fd7e14",  // Orange
     rects: "#28a745"       // Grün
   };
 
@@ -258,21 +259,21 @@ function updateOutput() {
     yaml += `    model: ${mappedModel}\n`;
 
     const grouped = {
-      vorkomma: [],
-      nachkomma: [],
+      predecimal: [],
+      postdecimal: [],
       rects: []
     };
 
     // Gruppiere Rechtecke anhand ihrer Zuweisung
     sectionRects.forEach(r => {
-      const group = r.group || "vorkomma";  // fallback falls nicht gesetzt
+      const group = r.group || "predecimal";  // fallback falls nicht gesetzt
       if (grouped[group]) {
         grouped[group].push(r);
       }
     });
 
     // YAML-Ausgabe für jede Gruppe
-    for (const groupName of ["vorkomma", "nachkomma", "rects"]) {
+    for (const groupName of ["predecimal", "postdecimal", "rects"]) {
       if (grouped[groupName].length > 0) {
         yaml += `    ${groupName}:\n`;
         grouped[groupName].forEach(r => {
@@ -329,6 +330,34 @@ function updateOutput() {
       });
   }
 
+function sendImageToSegment() {
+  const identifier = document.getElementById("identifierInput").value;
+  const imgElement = document.getElementById("sourceImage");
+
+  // Pfad aus src extrahieren → Dateiname
+  const path = imgElement.getAttribute("src");
+  const filename = path.split("/").pop();
+
+  fetch(`/images/${filename}`)
+    .then(res => res.blob())
+    .then(blob => {
+      const formData = new FormData();
+      formData.append("identifier", identifier);
+      formData.append("image", blob, filename);
+
+      return fetch("/segment", {
+        method: "POST",
+        body: formData
+      });
+    })
+    .then(res => res.json())
+    .then(data => {
+      alert("🔍 Ergebnis:\n" + JSON.stringify(data, null, 2));
+    })
+    .catch(err => {
+      alert("❌ Fehler bei Erkennung:\n" + err);
+    });
+}
 
 
     
