@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Segment Editor</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      max-width: 900px;
+      margin: auto;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      cursor: crosshair;
+    }
+
+    #wrapper {
+      position: relative;
+      display: inline-block;
+      margin-top: 20px;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    textarea {
+      width: 100%;
+      height: 200px;
+      margin-top: 20px;
+    }
+
+    #crosshair {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    #crosshair .h-line,
+    #crosshair .v-line {
+      position: absolute;
+      background: rgba(255, 0, 0, 0.6);
+    }
+
+    #crosshair .h-line {
+      height: 1px;
+      width: 100%;
+    }
+
+    #crosshair .v-line {
+      width: 1px;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h2>Segment Editor</h2>
+
+  <label for="identifierInput">Identifier:</label>
+  <input type="text" id="identifierInput" value="zaehler" />
+
+  <br><br>
+
+  <label for="sectionInput">Neuer Abschnittsname:</label>
+  <input type="text" id="sectionInput" placeholder="anzeige1" />
+  <button onclick="addSection()">Hinzufügen</button>
+
+  <br><br>
+
+  <label for="sectionSelect">Abschnitt wählen:</label>
+  <select id="sectionSelect" onchange="updateOutput()">
+      <option value="anzeige1">anzeige1</option>
+  </select>
+  <button onclick="deleteCurrentSection()">Löschen</button>
+
+  <br><br>
+
+  <label for="modelSelect">Modelltyp für neuen Bereich:</label>
+  <select id="modelSelect">
+    <option value="digital">digital</option>
+    <option value="analog">analog</option>
+    <option value="tesseract">tesseract</option>
+  </select>
+  
+<label for="subgroupSelect">Gruppe:</label>
+<select id="subgroupSelect">
+  <option value="vorkomma">vorkomma</option>
+  <option value="nachkomma">nachkomma</option>
+  <option value="rects">rects</option>
+</select>  
+<br>
+
+<div style="margin-top: 10px;">
+  <button onclick="sendTestConfig(false)">🧪 Test</button>
+  <button onclick="sendTestConfig(true)">💾 speichern</button>
+</div>
+
+
+
+  <div id="wrapper">
+    <img id="sourceImage" src="/images/{{ image_name }}" alt="Source Image" />
+    <canvas id="canvas"></canvas>
+    <div id="crosshair">
+      <div class="h-line"></div>
+      <div class="v-line"></div>
+    </div>
+  </div>
+
+  <textarea id="output" readonly></textarea>
+
+  <script>
+    const img = document.getElementById("sourceImage");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const output = document.getElementById("output");
+
+    const sectionSelect = document.getElementById("sectionSelect");
+    const sectionInput = document.getElementById("sectionInput");
+    const modelSelect = document.getElementById("modelSelect");
+    const identifierInput = document.getElementById("identifierInput");
+
+    const crosshair = document.getElementById("crosshair");
+    const hLine = crosshair.querySelector(".h-line");
+    const vLine = crosshair.querySelector(".v-line");
+
+    let segments = {};  // z. B. { meter1: [{x,y,w,h,modelType}, ...] }
+
+    let startX, startY, isDrawing = false;
+
+    function getScaleFactor() {
+      return {
+        x: img.naturalWidth / img.clientWidth,
+        y: img.naturalHeight / img.clientHeight
+      };
+    }
+
+    img.onload = () => {
+      canvas.width = img.clientWidth;
+      canvas.height = img.clientHeight;
+      crosshair.style.width = canvas.width + "px";
+      crosshair.style.height = canvas.height + "px";
+    };
+
+    canvas.addEventListener("mousedown", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      startX = e.clientX - rect.left;
+      startY = e.clientY - rect.top;
+      isDrawing = true;
+    });
+
+    canvas.addEventListener("mouseup", (e) => {
+      if (!isDrawing) return;
+      const rect = canvas.getBoundingClientRect();
+      const endX = e.clientX - rect.left;
+      const endY = e.clientY - rect.top;
+      const w = endX - startX;
+      const h = endY - startY;
+
+      const scale = getScaleFactor();
+      const modelType = modelSelect.value || "digital";
+
+      const activeSection = sectionSelect.value;
+      if (!segments[activeSection]) segments[activeSection] = [];
+      
+let group = "rects";  // Default für analog/tesseract
+
+if (modelType === "digital") {
+  group = document.getElementById("subgroupSelect").value || "vorkomma";
+}  
+
+        segments[activeSection].push({
+          x: startX * scale.x,
+          y: startY * scale.y,
+          w: w * scale.x,
+          h: h * scale.y,
+          modelType: modelType,
+          group: group
+        });
+
+
+      isDrawing = false;
+      redraw();
+      updateOutput();
+    });
+
+    canvas.addEventListener("mousemove", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      hLine.style.top = y + "px";
+      vLine.style.left = x + "px";
+    });
+    
+    document.getElementById("modelSelect").addEventListener("change", function () {
+      const model = this.value;
+      const subgroupSelect = document.getElementById("subgroupSelect");
+
+      if (model === "digital") {
+        subgroupSelect.style.display = "inline";
+      } else {
+        subgroupSelect.style.display = "none";
+      }
+    });
+
+    
+function redraw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const scale = {
+    x: img.clientWidth / img.naturalWidth,
+    y: img.clientHeight / img.naturalHeight
+  };
+
+  const colors = {
+    vorkomma: "#007bff",   // Blau
+    nachkomma: "#fd7e14",  // Orange
+    rects: "#28a745"       // Grün
+  };
+
+  for (let key in segments) {
+    segments[key].forEach(r => {
+      const color = colors[r.group] || "#6c757d"; // Standard: Grau
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(r.x * scale.x, r.y * scale.y, r.w * scale.x, r.h * scale.y);
+    });
+  }
+}
+
+
+function updateOutput() {
+  const identifier = document.getElementById("identifierInput").value || "wasserzaehler";
+  const modelMap = {
+    digital: "digital",
+    analog: "analog",
+    tesseract: "tesseract"
+  };
+
+  let yaml = `${identifier}:\n`;
+
+  for (let sectionName in segments) {
+    const sectionRects = segments[sectionName];
+    if (!sectionRects || sectionRects.length === 0) continue;
+
+    const firstModelType = sectionRects[0].modelType || "digital";
+    const mappedModel = modelMap[firstModelType] || firstModelType;
+
+    yaml += `  ${sectionName}:\n`;
+    yaml += `    model: ${mappedModel}\n`;
+
+    const grouped = {
+      vorkomma: [],
+      nachkomma: [],
+      rects: []
+    };
+
+    // Gruppiere Rechtecke anhand ihrer Zuweisung
+    sectionRects.forEach(r => {
+      const group = r.group || "vorkomma";  // fallback falls nicht gesetzt
+      if (grouped[group]) {
+        grouped[group].push(r);
+      }
+    });
+
+    // YAML-Ausgabe für jede Gruppe
+    for (const groupName of ["vorkomma", "nachkomma", "rects"]) {
+      if (grouped[groupName].length > 0) {
+        yaml += `    ${groupName}:\n`;
+        grouped[groupName].forEach(r => {
+          yaml += `      - [${Math.round(r.x)}, ${Math.round(r.y)}, ${Math.round(r.w)}, ${Math.round(r.h)}]\n`;
+        });
+      }
+    }
+  }
+
+  output.value = yaml;
+}
+
+
+    function addSection() {
+      const name = sectionInput.value.trim();
+      if (!name) return;
+      if (!segments[name]) {
+        segments[name] = [];
+        const opt = document.createElement("option");
+        opt.value = opt.text = name;
+        sectionSelect.add(opt);
+        sectionSelect.value = name;
+        updateOutput();
+      }
+    }
+
+    function deleteCurrentSection() {
+      const selected = sectionSelect.value;
+      if (selected && segments[selected]) {
+        delete segments[selected];
+        sectionSelect.remove(sectionSelect.selectedIndex);
+        updateOutput();
+        redraw();
+      }
+    }
+    
+  
+
+  function sendTestConfig(save = false) {
+    const yaml = document.getElementById("output").value;
+    const url = save ? "/test-config?save=true" : "/test-config";
+
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "text/yaml" },
+      body: yaml
+    })
+      .then(res => res.json())
+      .then(data => {
+        alert((save ? "💾 Gespeichert:\n" : "🧪 Test erfolgreich:\n") + JSON.stringify(data, null, 2));
+      })
+      .catch(err => {
+        alert("❌ Fehler beim Senden:\n" + err);
+      });
+  }
+
+
+
+    
+    
+  </script>
+</body>
+</html>
+

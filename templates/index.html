@@ -1,1 +1,30 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Image Segmenter</title>
+  <style>
+    canvas { border: 1px solid black; }
+  </style>
+</head>
+<body>
+  <h1>Zeichne Segmente</h1>
+  <form method="POST" action="/upload" enctype="multipart/form-data">
+    <input type="file" name="image">
+    <button type="submit">Upload</button>
+  </form>
+
+  {% if image_name %}
+  <h2>Bearbeite: {{ image_name }}</h2>
+  <canvas id="canvas"></canvas>
+  <br>
+  Identifier: <input type="text" id="identifier">
+  <button onclick="saveSegments()">Speichern</button>
+  <script>
+    const imageName = "{{ image_name }}";
+  </script>
+  <script src="/static/draw.js"></script>
+  {% endif %}
+</body>
+</html>
