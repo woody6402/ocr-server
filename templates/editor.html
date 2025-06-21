@@ -64,33 +64,33 @@
 <body>
   <h2>Segment Editor</h2>
 
-  <label for="identifierInput">Identifier:</label>
+  <label for="identifierInput">Meter name:</label>
   <input type="text" id="identifierInput" value="zaehler" />
 
   <br><br>
 
-  <label for="sectionInput">Neuer Abschnittsname:</label>
+  <label for="sectionInput">New segment:</label>
   <input type="text" id="sectionInput" placeholder="anzeige1" />
-  <button onclick="addSection()">Hinzufügen</button>
+  <button onclick="addSection()">Add</button>
 
   <br><br>
 
-  <label for="sectionSelect">Abschnitt wählen:</label>
+  <label for="sectionSelect">Choose segment:</label>
   <select id="sectionSelect" onchange="updateOutput()">
-      <option value="anzeige1">anzeige1</option>
+      <option value="seg1">seg1</option>
   </select>
-  <button onclick="deleteCurrentSection()">Löschen</button>
+  <button onclick="deleteCurrentSection()">Delete</button>
 
   <br><br>
 
-  <label for="modelSelect">Modelltyp für neuen Bereich:</label>
+  <label for="modelSelect">Model type:</label>
   <select id="modelSelect">
     <option value="digital">digital</option>
     <option value="analog">analog</option>
     <option value="tesseract">tesseract</option>
   </select>
   
-<label for="subgroupSelect">Gruppe:</label>
+<label for="subgroupSelect">Group:</label>
 <select id="subgroupSelect">
   <option value="vorkomma">vorkomma</option>
   <option value="nachkomma">nachkomma</option>
@@ -100,7 +100,7 @@
 
 <div style="margin-top: 10px;">
   <button onclick="sendTestConfig(false)">🧪 Test</button>
-  <button onclick="sendTestConfig(true)">💾 speichern</button>
+  <button onclick="sendTestConfig(true)">💾 Save</button>
 </div>
 
 
