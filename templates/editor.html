@@ -70,14 +70,16 @@
   <br><br>
 
   <label for="sectionInput">New segment:</label>
-  <input type="text" id="sectionInput" placeholder="digital-1" />
+  <input type="text" id="sectionInput" placeholder="d1" />
   <button onclick="addSection()">Add</button>
 
   <br><br>
 
   <label for="sectionSelect">Choose segment:</label>
   <select id="sectionSelect" onchange="updateOutput()">
-      <option value="digital-1">digital-1</option>
+      <option value="d1">d1</option>
+      <option value="a1">a1</option>
+      <option value="t1">t1</option>
   </select>
   <button onclick="deleteCurrentSection()">Delete</button>
 
@@ -85,7 +87,9 @@
 
   <label for="modelSelect">Model type:</label>
   <select id="modelSelect">
-    <option value="digital">digital</option>
+    <option value="digital-cont">digital-cont</option>
+    <option value="digital-class11">digital-class11</option>   
+    <option value="digital-class100">digital-class100</option>        
     <option value="analog">analog</option>
     <option value="tesseract">tesseract</option>
   </select>
@@ -173,7 +177,8 @@
       
 let group = "rects";  // Default für analog/tesseract
 
-if (modelType === "digital") {
+
+if (modelType.startsWith("digital")) {
   group = document.getElementById("subgroupSelect").value || "predecimal";
 }  
 
@@ -205,7 +210,7 @@ if (modelType === "digital") {
       const model = this.value;
       const subgroupSelect = document.getElementById("subgroupSelect");
 
-      if (model === "digital") {
+      if (model.startsWith("digital")) {
         subgroupSelect.style.display = "inline";
       } else {
         subgroupSelect.style.display = "none";
