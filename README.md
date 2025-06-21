@@ -76,4 +76,7 @@ Then open: [http://127.0.0.1:5000](http://127.0.0.1:5000)
 
 MIT License – free to use with attribution.
 
+## Todos
+- send generated values to a MQTT server 
+
 
