@@ -74,7 +74,8 @@ Then open: [http://127.0.0.1:5000](http://127.0.0.1:5000)
 
 ## 📖 License
 
-MIT License – free to use with attribution.
+MIT License – free to use with attribution.\
+the tflite files are under ownership of AI-on-the-edge-device and others and the corresponding rules do apply ...
 
 ## Todos
 - send generated values to a MQTT server 
