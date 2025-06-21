@@ -1,25 +1,75 @@
-# ocr-server
+# 🔍 Segment Editor + OCR for Meter Readings
 
-This projects creates a docker image which can process pictures of meters and extract the values.\
-(similar to AI on the EDGE but doing ot on the server side and expanding by use of tesseract)
+A Flask-based web tool for interactive configuration and recognition of analog and digital meter displays – using TFLite models, Tesseract OCR, and image segmentation.
 
-Currently it's using the following models:
-- tesseract
-* tensorflow: Digital (AI on the EDGE)
-+ tensorflow: Analog (AI onn the EDGE)
+## 🚀 Features
 
-### Disclaimer
-Status: concept work / or work in progress\
-It's reusing some of the AI on the EDGE results (Tensorflow flite models)\
-[AI-on-the-edge-device](https://github.com/jomjol/AI-on-the-edge-device)
+- 📤 Upload custom meter images
+- ✏️ Interactive drawing of image segments
+- ⚙️ YAML-based configuration generation
+- 🧠 Supports:
+  - TFLite digital models (`digital`)
+  - TFLite analog models (`analog`)
+  - Tesseract OCR (`tesseract`)
+- 🔁 Test and save configuration directly in the browser
+- 🎯 Live inference via the `/segment` API
 
-## Scan a picture and generate values
-Send a request f.e. via curl:
+## 🖼️ Screenshot
 
-`curl -X POST http://localhost:5000/segment   -F "identifier=wasserzaehler"   -F "image=@./t4.jpg"`
+<img src="SegmentEditor.png" alt="Segment Editor UI" width="700"/>
 
-`{"identifier":"wasserzaehler","results":[{"id":"a1","value":"00016.0"},{"id":"a2","value":9.127448058121708},{"id":"a3","value":3.881748198574262},{"id":"anzeige1","value":1.2311287412814798},{"id":"a5","value":3.345734090629815}]}`
+## 🧑‍💻 Getting Started Locally
 
-## Segment Editor
-You can use http://127.0.0.1:5000/ to upload a new meter picture and to generate and test the yaml config for this meter.
-<img src="SegmentEditor.png" alt="Edit" width="400"/>
+### Prerequisites
+
+- Docker + Docker Compose
+
+### Start the Application
+
+```bash
+docker-compose up --build
+```
+
+Then open: [http://127.0.0.1:5000](http://127.0.0.1:5000)
+
+## 🧪 Workflow
+
+1. 📷 Upload a meter image via `/`
+2. 🖱️ Draw segments using the editor (`/editor/<image>`)
+3. ⚙️ Assign model type and segment group (e.g., `pre-decimal`, `post-decimal`, or `rects`)
+4. 💾 Save the YAML config
+5. 🔍 Click "Scan" to test inference with the selected config
+
+## ⚙️ API Endpoints
+
+| URL                 | Purpose                        |
+|---------------------|--------------------------------|
+| `/`                 | Upload a new image             |
+| `/editor/<image>`   | Interactive segment editor     |
+| `/segment`          | Run inference on an image      |
+| `/test-config`      | Test/save YAML configuration   |
+| `/images/<file>`    | Access uploaded images         |
+
+## 📁 Project Structure
+
+```
+.
+├── app.py              # Flask app with OCR and inference logic
+├── models/editor.html  # Browser-based segment editor
+├── config.yaml         # YAML config storage
+├── models/             # .tflite models
+├── images/             # Uploaded images
+├── Dockerfile
+├── docker-compose.yaml
+└── requirements.txt
+```
+
+## 🔗 Related Projects
+
+- [jomjol/AI-on-the-edge-device](https://github.com/jomjol/AI-on-the-edge-device) – OCR system for ESP32 camera-based devices
+
+## 📖 License
+
+MIT License – free to use with attribution.
+
+
