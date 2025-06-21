@@ -1,0 +1,33 @@
+wasserzaehler:
+  a1:
+    model: dig-cont_0900_s3_q
+    vorkomma:
+    - [209, 131, 33, 46]
+    - [255, 126, 36, 51]
+    - [303, 128, 41, 54]
+    - [356, 130, 36, 51]
+    - [404, 128, 36, 49]
+  a2:
+    model: ana-cont_1500_s2_q
+    rects:
+    - [165, 333, 97, 95]
+  a3:
+    model: ana-cont_1500_s2_q
+    rects:
+    - [291, 370, 105, 96]
+  anzeige1:
+    model: ana-cont_1500_s2_q
+    rects:
+    - [392, 329, 100, 97]
+  a5:
+    model: ana-cont_1500_s2_q
+    rects:
+    - [443, 232, 96, 93]
+    
+zaehler:
+  anzeige1:
+    model: dig-cont_0900_s3_q
+    vorkomma:
+    - [404, 130, 39, 51]
+    - [356, 127, 33, 50]
+

@@ -1,0 +1,7 @@
+flask
+pillow
+opencv-python
+pytesseract
+pyyaml
+tensorflow
+

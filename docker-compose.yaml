@@ -1,0 +1,13 @@
+
+version: '3.8'
+services:
+  image_segmenter:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./config.yaml:/app/config.yaml
+      - ./images:/app/images
+      - ./models:/app/models 
+    environment:
+      - PYTHONUNBUFFERED=1
