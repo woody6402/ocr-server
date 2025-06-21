@@ -1,6 +1,8 @@
 # ocr-server
 
-This projects creates a docker image which can process pictures of meters and extract the values.
+This projects creates a docker image which can process pictures of meters and extract the values. 
+
+(similar to AI on the EDGE but doing ot on the server side and expanding by use of tesseract)
 
 Status: concept work
 
