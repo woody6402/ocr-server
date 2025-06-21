@@ -160,17 +160,17 @@ def segment_and_ocr():
     for key, section in definition.items():
         model = section.get("model", "tesseract")
         logging.info(f"[PIC Parsing] Seciton: {key}, Model: {model}")
-        if "vorkomma" in section or "nachkomma" in section:
+        if "predecimal" in section or "postdecimal" in section:
             digits = []
-            for group in ["vorkomma", "nachkomma"]:
+            for group in ["predecimal", "postdecimal"]:
                 for rect in section.get(group, []):
                     x, y, w, h = rect
                     segment = image.crop((x, y, x + w, y + h))
                     result = run_model(segment, model)
                     digits.append(str(result.get("class", "?")))
-            #value = "".join(digits[:len(section.get("vorkomma", []))]) + "." + "".join(digits[len(section.get("vorkomma", [])):])
+            #value = "".join(digits[:len(section.get("predecimal", []))]) + "." + "".join(digits[len(section.get("predecimal", [])):])
             
-            vorkomma_len = len(section.get("vorkomma", []))
+            vorkomma_len = len(section.get("predecimal", []))
             vorkomma_part = "".join(digits[:vorkomma_len]) or "0"
             nachkomma_part = "".join(digits[vorkomma_len:]) or "0"
             
