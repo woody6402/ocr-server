@@ -2,6 +2,8 @@
 
 A Flask-based web tool for interactive configuration and recognition of analog and digital meter displays – using TFLite models, Tesseract OCR, and image segmentation.
 
+It's mainly thought o be used in HA to send a picture of a meter and to generate values on the server side.
+
 ## 🚀 Features
 
 - 📤 Upload custom meter images
