@@ -1,7 +1,7 @@
 watermeter:
   d1:
     model: dig-cont_0900_s3_q
-    vorkomma:
+    predecimal:
     - [209, 131, 33, 46]
     - [255, 126, 36, 51]
     - [303, 128, 41, 54]
@@ -26,6 +26,27 @@ watermeter:
   t1:
     model: tesseract
     rects:
-      - [305, 188, 162, 30]
-    
+    - [305, 188, 162, 30]
 
+
+pv:
+  pv:
+    model: tesseract
+    rects:
+    - [194, 92, 52, 23]
+  net:
+    model: tesseract
+    rects:
+    - [335, 206, 60, 23]
+  home:
+    model: tesseract
+    rects:
+    - [190, 316, 52, 20]
+  bat:
+    model: tesseract
+    rects:
+    - [44, 206, 52, 21]
+  bat-p:
+    model: tesseract
+    rects:
+    - [51, 172, 42, 25]
