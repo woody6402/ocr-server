@@ -79,5 +79,6 @@ the tflite files are under ownership of AI-on-the-edge-device and others and the
 
 ## Todos
 - send generated values to a MQTT server  - done V0.91
+- allow match: <regex> patterns to validate resulsts
 
 
