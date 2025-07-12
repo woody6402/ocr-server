@@ -59,8 +59,10 @@ Then open: [http://127.0.0.1:5000](http://127.0.0.1:5000)
 ```
 .
 ├── app.py              # Flask app with OCR and inference logic
+├── transformation.py   # Customer specific transformation
 ├── templates/editor.html  # Browser-based segment editor
-├── config.yaml         # YAML config storage
+├── config/
+│   └── config.yaml    # YAML config storage  
 ├── models/             # .tflite models
 ├── images/             # Uploaded images
 ├── Dockerfile
