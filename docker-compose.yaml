@@ -6,8 +6,8 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ./config.yaml:/app/config.yaml
+      - ./config:/app/config
       - ./images:/app/images
-      - ./models:/app/models 
+      - ./models:/app/models
     environment:
       - PYTHONUNBUFFERED=1

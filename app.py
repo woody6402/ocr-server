@@ -28,7 +28,7 @@ logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 
-CONFIG_FILE = "config.yaml"
+CONFIG_FILE = "/app/config/config.yaml"
 OUTPUT_DIR = "/app/images"
 
 # Stelle sicher, dass der Output-Ordner existiert
@@ -37,7 +37,9 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 # Lade Konfiguration
 def load_config():
     with open(CONFIG_FILE, "r") as f:
-        return yaml.safe_load(f)
+        x = yaml.safe_load(f)
+        logging.info(f"[LOAD Config]: {x}")    
+        return x
 
 
 config = load_config()
@@ -298,6 +300,7 @@ def is_valid_value(value: str, match_pattern: str) -> bool:
 
 
 from transformations import apply_transformations  # Stelle sicher, dass du transformations.py hast
+from PIL import ImageEnhance, ImageOps
 
 @app.route("/segment", methods=["POST"])
 def segment_and_ocr():
@@ -321,11 +324,32 @@ def segment_and_ocr():
         
     # 🔽 Bild zur Kontrolle speichern
     image.save(f"images/{identifier}_debug.jpg")
+        
+    # Bildoptimierung je nach Konfiguration
+    enhance_cfg = definition.get("enhance", {})
+
+    if enhance_cfg.get("grayscale", False):
+        image = image.convert("L")
+
+    if "contrast" in enhance_cfg:
+        enhancer = ImageEnhance.Contrast(image)
+        factor = float(enhance_cfg["contrast"])
+        image = enhancer.enhance(factor)
+
+    if enhance_cfg.get("invert", False):
+        image = ImageOps.invert(image)
+
+    if "threshold" in enhance_cfg:
+        threshold = int(enhance_cfg["threshold"])
+        image = image.point(lambda x: 255 if x > threshold else 0, mode="1")
+        
+    # 🔽 Bild zur Kontrolle speichern
+    image.save(f"images/{identifier}_Edebug.jpg")
 
     results = []
 
     for key, section in definition.items():
-        if key == "transform" or key == "rotate":
+        if key == "transform" or key == "rotate" or key == "enhance":
             continue  # skip transform block
 
         model = section.get("model", "tesseract")
@@ -472,6 +496,17 @@ def test_config():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@app.route("/reload-config", methods=["POST"])
+def reload_config():
+    global config
+    try:
+        config = load_config()
+        logging.info("[Config] Konfiguration erfolgreich neu geladen.")
+        return jsonify({"status": "reloaded", "keys": list(config.keys())})
+    except Exception as e:
+        logging.error(f"[Config] Fehler beim Laden: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 
