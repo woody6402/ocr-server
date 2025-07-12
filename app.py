@@ -9,6 +9,7 @@ import numpy as np
 import tensorflow as tf
 from math import atan2, pi, fmod
 import logging
+import colorsys
 
 from flask import render_template
 from werkzeug.utils import secure_filename
@@ -49,18 +50,152 @@ def run_lcd_model(image):
 interpreter_cache = {}
 
 
+
+
+
+def run_led_model(image: Image.Image, model_name: str = "led") -> dict:
+    # Durchschnitts-RGB und max-Helligkeit berechnen
+    arr = np.array(image.convert("RGB"))
+    mean_rgb = arr.reshape(-1, 3).mean(axis=0)
+    mean_rgb = tuple(map(int, mean_rgb))
+
+    # Max-Helligkeit berechnen (für bessere Einschätzung von LED-Status)
+    r, g, b = arr[..., 0], arr[..., 1], arr[..., 2]
+    brightness_array = 0.2126 * r + 0.7152 * g + 0.0722 * b
+    max_brightness = brightness_array.max()
+
+    # Helligkeitsschwelle zum Erkennen, ob LED "an" ist
+    if max_brightness < 100:
+        return {
+            "class": "off",
+            "rgb": mean_rgb,
+            "brightness": round(max_brightness)
+        }
+
+    # Farbe ermitteln (falls LED an)
+    r_norm, g_norm, b_norm = [x / 255.0 for x in mean_rgb]
+    h, s, v = colorsys.rgb_to_hsv(r_norm, g_norm, b_norm)
+    hue = h * 360
+
+    if 0 <= hue <= 40 or hue > 320:
+        color = "red"
+    elif 40 < hue <= 75:
+        color = "yellow"
+    elif 75 < hue <= 160:
+        color = "green"
+    elif 160 < hue <= 250:
+        color = "blue"
+    else:
+        color = "unknown"
+
+    return {
+        "class": color,
+        "rgb": mean_rgb,
+        "brightness": round(max_brightness)
+    }
+
+    
+
 def run_model(image: Image.Image, model_name: str) -> dict:
-    #return run_seg_model(image, model_name)
+
+    model_name = MODEL_MAP.get(model_name, model_name)
 
     if model_name.startswith("dig-"):
         return run_digit_model(image, model_name)
     elif model_name.startswith("ana-") or "analog" in model_name:
         return run_analog_model(image, model_name)
+    elif model_name.startswith("color-") or model_name == "color":
+        return run_color_model(image, model_name)
+    elif model_name.startswith("led-") or model_name == "led":
+        return run_led_model(image, model_name)
     else:
         return run_tesseract_model(image, model_name)
 
 
+
+
+def classify_color(rgb):
+    r, g, b = rgb
+    if r > 180 and g < 100 and b < 100:
+        return "red"
+    elif g > 180 and r < 100 and b < 100:
+        return "green"
+    elif b > 180 and r < 100 and g < 100:
+        return "blue"
+    elif r > 180 and g > 180 and b < 100:
+        return "yellow"
+    else:
+        return "unknown"
+
+
+def get_average_rgb(image: Image.Image) -> tuple:
+    arr = np.array(image.convert("RGB"))
+    mean_color = arr.reshape(-1, 3).mean(axis=0)
+    return tuple(map(int, mean_color))
+
+def run_color_model(image: Image.Image, model_name: str = "color") -> dict:
+    rgb = get_average_rgb(image)
+    return {
+        "class": f"{int(rgb[0])},{int(rgb[1])},{int(rgb[2])}"
+    }
+
+import numpy as np
+import tensorflow as tf
+from PIL import Image
+import logging
+import re
+
+def extract_num_classes(model_name: str) -> int:
+    """Extrahiert die Anzahl der Klassen aus dem Modellnamen (z. B. 'class100')"""
+    match = re.search(r'class(\d+)', model_name)
+    return int(match.group(1)) if match else 10  # fallback zu 10 Klassen
+
 def run_digit_model(image: Image.Image, model_name: str) -> dict:
+    model_path = f"models/{model_name}.tflite"
+    interpreter = tf.lite.Interpreter(model_path=model_path)
+    interpreter.allocate_tensors()
+
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
+
+    input_shape = input_details[0]['shape']  # [1, H, W, 3]
+    width, height = input_shape[2], input_shape[1]
+
+    # Bild vorbereiten
+    img = image.resize((width, height)).convert("RGB")
+    img_array = np.asarray(img, dtype=np.float32)
+    img_array = np.expand_dims(img_array, axis=0)
+
+    # Modell aufrufen
+    interpreter.set_tensor(input_details[0]['index'], img_array)
+    interpreter.invoke()
+    output_data = interpreter.get_tensor(output_details[0]['index'])[0]
+
+    # Vorhersage bestimmen
+    predicted_index = int(np.argmax(output_data))
+    num_classes = extract_num_classes(model_name)
+
+    # Ziffer berechnen
+    if num_classes == 100:
+        digit_value = str(int(round(predicted_index / 10.0, 1)))  # z. B. 50 → 5.0
+    elif num_classes == 11:
+        digit_value = str(int(predicted_index)) if predicted_index < 10 else "?"  # 0–9, 10 = "N"
+    else:
+        digit_value = str(int(predicted_index)) # fallback: 0–(n-1)
+
+    logging.info(f"[DIGIT MODEL] Class Index: {predicted_index}")
+    logging.info(f"[DIGIT MODEL] Calculated Value: {digit_value}")
+    logging.info(f"[DIGIT MODEL] Raw Scores: {output_data}")
+
+    return {
+        "class_index": predicted_index,
+        "class": digit_value,
+        "scores": output_data.tolist()
+    }
+
+    
+
+def run_digit_model_x(image: Image.Image, model_name: str) -> dict:
     model_path = f"models/{model_name}.tflite"
     interpreter = tf.lite.Interpreter(model_path=model_path)
     interpreter.allocate_tensors()
@@ -81,6 +216,8 @@ def run_digit_model(image: Image.Image, model_name: str) -> dict:
     output_data = interpreter.get_tensor(output_details[0]['index'])[0]
     predicted_class = int(np.argmax(output_data))
     logging.info(f"[DIGITAL MODEL] Digit: {predicted_class}")
+    logging.info(f"[DIGITAL MODEL] Digit: {output_data}")
+   
 
     return {
         "class": predicted_class,
@@ -149,6 +286,19 @@ def run_analog_model(image: Image.Image, model_name: str) -> dict:
     }
 
 
+import re
+
+def is_valid_value(value: str, match_pattern: str) -> bool:
+    if not isinstance(value, str):
+        return False
+    try:
+        return bool(re.match(match_pattern, value))
+    except re.error:
+        return False
+
+
+from transformations import apply_transformations  # Stelle sicher, dass du transformations.py hast
+
 @app.route("/segment", methods=["POST"])
 def segment_and_ocr():
     if "identifier" not in request.form or "image" not in request.files:
@@ -162,12 +312,28 @@ def segment_and_ocr():
 
     image = Image.open(image_file.stream).convert("RGB")
     definition = config[identifier]
+    
+    # Dynamische Rotation, falls im YAML gesetzt
+    
+    rotation_angle = definition.get("rotate", 0)  # z. B. 90, -90, 180
+    if rotation_angle != 0:
+        image = image.rotate(rotation_angle, expand=True)
+        
+    # 🔽 Bild zur Kontrolle speichern
+    image.save(f"images/{identifier}_debug.jpg")
 
     results = []
 
     for key, section in definition.items():
+        if key == "transform" or key == "rotate":
+            continue  # skip transform block
+
         model = section.get("model", "tesseract")
         logging.info(f"[PIC Parsing] Section: {key}, Model: {model}")
+
+        match_pattern = section.get("match")
+        value = None
+
         if "predecimal" in section or "postdecimal" in section:
             digits = []
             for group in ["predecimal", "postdecimal"]:
@@ -176,41 +342,55 @@ def segment_and_ocr():
                     segment = image.crop((x, y, x + w, y + h))
                     result = run_model(segment, model)
                     digits.append(str(result.get("class", "?")))
-            #value = "".join(digits[:len(section.get("predecimal", []))]) + "." + "".join(digits[len(section.get("predecimal", [])):])
-            
+
             vorkomma_len = len(section.get("predecimal", []))
             vorkomma_part = "".join(digits[:vorkomma_len]) or "0"
             nachkomma_part = "".join(digits[vorkomma_len:]) or "0"
-            
             value = f"{vorkomma_part}.{nachkomma_part}"
 
-            logging.info(f"[PIC Parsing] Value: {value}")
-        elif "rects" in section:            
-            # 
+        elif "rects" in section:
             values = []
             for rect in section["rects"]:
                 x, y, w, h = rect
                 segment = image.crop((x, y, x + w, y + h))
                 result = run_model(segment, model)
                 values.append(result.get("class", ""))
-                
-            if model == "tesseract":
-                value = "".join(str(v) for v in values if v != "")    
-            else:
-                value = values[0] 
-                                
-            logging.info(f"[PIC Parsing] Value: {value}")
-        else:
-            value = None
 
+            if model == "tesseract":
+                value = "".join(str(v) for v in values if v != "")
+            else:
+                value = values[0]
+
+        # Pattern match anwenden
+        if match_pattern and isinstance(value, str):
+            match = re.search(match_pattern, value)
+            orig = value
+            value = match.group(0) if match else ""
+            logging.info(f"[Validation] Scanned value '{orig}' matched: '{value}'")
+
+        logging.info(f"[PIC Parsing] Final Value: {value}")
         results.append({
             "id": key,
             "value": value
         })
 
+    # Transformationen anwenden, falls definiert
+    transform_conf = definition.get("transform")
+    if transform_conf:
+        try:
+            apply_transformations(transform_conf, results)
+        except Exception as e:
+            logging.error(f"[Transform] Failed to apply transformations: {e}")
+
+    # MQTT senden, falls konfiguriert
+    mqtt_config = config.get("mqtt")
+    if mqtt_config:
+        try:
+            publish_results_to_mqtt(results, identifier, mqtt_config)
+        except Exception as e:
+            logging.error(f"[MQTT] Failed to send: {e}")
+
     return jsonify({"identifier": identifier, "results": results})
-    
-    
 
 @app.route("/")
 def index():
@@ -307,6 +487,28 @@ def represent_list(dumper, data):
 
 FlowStyleListDumper.add_representer(list, represent_list)
 
+import paho.mqtt.publish as publish
+import json
+
+def publish_results_to_mqtt(results: list, identifier: str, mqtt_config: dict):
+    topic = mqtt_config.get("topic", f"meters/{identifier}")
+    payload = {
+        "identifier": identifier,
+        "values": results
+    }
+
+    publish.single(
+        topic,
+        payload=json.dumps(payload),
+        hostname=mqtt_config["host"],
+        port=mqtt_config.get("port", 1883),
+        auth={
+            "username": mqtt_config.get("username"),
+            "password": mqtt_config.get("password")
+        } if "username" in mqtt_config else None
+    )
+    
+    logging.info(f"[MQTT:{topic}] Data:\n {payload}")
 
 
 if __name__ == "__main__":

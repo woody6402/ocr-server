@@ -1,3 +1,7 @@
+mqtt:
+  host: 192.168.0.165
+  port: 1883
+  topic_base: meters
 watermeter:
   d1:
     model: dig-cont_0900_s3_q
@@ -28,25 +32,51 @@ watermeter:
     rects:
     - [305, 188, 162, 30]
 
-
 pv:
   pv:
     model: tesseract
     rects:
-    - [194, 92, 52, 23]
-  net:
-    model: tesseract
-    rects:
-    - [335, 206, 60, 23]
-  home:
-    model: tesseract
-    rects:
-    - [190, 316, 52, 20]
+    - [195, 90, 54, 28]
+    match: '\d+(\.\d+)?'
+
   bat:
     model: tesseract
     rects:
-    - [44, 206, 52, 21]
+    - [46, 200, 56, 26]
+    match: '\d+(\.\d+)?'
   bat-p:
     model: tesseract
     rects:
-    - [51, 172, 42, 25]
+    - [51, 174, 42, 18]
+    match: '[0-9]+\%'    
+  home:
+    model: tesseract
+    rects:
+    - [190, 311, 62, 30]
+    match: '\d+(\.\d+)?'
+  net:
+    model: tesseract
+    rects:
+    - [339, 203, 57, 27]
+    match: '\d+(\.\d+)?'
+  transform: balance_sum_zero
+  
+  
+uhr-1:
+  rotate: -90
+  temp:
+    model: dig-class100-0180-s2-q
+    predecimal:
+      - [188, 611, 61, 97]
+      - [250, 611, 49, 102]
+    postdecimal:
+      - [300, 611, 60, 100]
+  zeit:
+    model: dig-class100-0180-s2-q
+    predecimal:
+      - [187, 405, 56, 103]
+    postdecimal:
+      - [249, 404, 75, 109]
+      - [324, 403, 61, 108]
+
+
