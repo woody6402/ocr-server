@@ -83,5 +83,6 @@ the tflite files are under ownership of AI-on-the-edge-device and others and the
 - allow custom code to work on scanned values and to modify return values. done V0.92-test
 - allow simplified model names in config.yaml. done V0.92-test
 - correct handling of digital models: -cont, -11, 100. done V0.92-test
+- add a possible rotation to the image. done V0.92-test
 
 
