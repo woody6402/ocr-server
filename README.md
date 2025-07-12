@@ -81,5 +81,7 @@ the tflite files are under ownership of AI-on-the-edge-device and others and the
 - send generated values to a MQTT server  - done V0.91
 - allow match: <regex> patterns to validate resulsts
 - allow custom code to work on scanned values and to modify return values
+- allow simplified model names in config.yaml
+- correct handling of digital models: -cont, -11, 100
 
 
