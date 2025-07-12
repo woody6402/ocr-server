@@ -1,1 +1,96 @@
+mqtt:
+  host: 192.168.0.165
+  port: 1883
+  topic_base: meters
+watermeter:
+  d1:
+    model: dig-cont_0900_s3_q
+    predecimal:
+    - [209, 131, 33, 46]
+    - [255, 126, 36, 51]
+    - [303, 128, 41, 54]
+    - [356, 130, 36, 51]
+    - [404, 128, 36, 49]
+  a1:
+    model: ana-cont_1500_s2_q
+    rects:
+    - [165, 333, 97, 95]
+  a2:
+    model: ana-cont_1500_s2_q
+    rects:
+    - [291, 370, 105, 96]
+  a3:
+    model: ana-cont_1500_s2_q
+    rects:
+    - [392, 329, 100, 97]
+  a4:
+    model: ana-cont_1500_s2_q
+    rects:
+    - [443, 232, 96, 93]
+  t1:
+    model: tesseract
+    rects:
+    - [305, 188, 162, 30]
+pv:
+  pv:
+    model: tesseract
+    rects:
+    - [195, 90, 54, 28]
+    match: \d+(\.\d+)?
+  bat:
+    model: tesseract
+    rects:
+    - [46, 200, 56, 26]
+    match: \d+(\.\d+)?
+  bat-p:
+    model: tesseract
+    rects:
+    - [51, 174, 42, 18]
+    match: '[0-9]+\%'
+  home:
+    model: tesseract
+    rects:
+    - [190, 311, 62, 30]
+    match: \d+(\.\d+)?
+  net:
+    model: tesseract
+    rects:
+    - [339, 203, 57, 27]
+    match: \d+(\.\d+)?
+  transform: balance_sum_zero
+uhr-1:
+  rotate: -90
+  temp:
+    model: dig-class100-0180-s2-q
+    predecimal:
+    - [188, 611, 61, 97]
+    - [250, 611, 49, 102]
+    postdecimal:
+    - [323, 611, 63, 110]
+  zeit:
+    model: dig-class100-0180-s2-q
+    predecimal:
+    - [192, 397, 73, 118]
+    postdecimal:
+    - [249, 404, 75, 109]
+    - [324, 403, 61, 108]
+
+uhr-2:
+  rotate: -90
+  enhance:
+    contrast: 0.8
+  temp:
+    model: dig-class100-0180-s2-q
+    predecimal:
+    - [199, 613, 86, 103]
+    - [250, 611, 49, 102]
+    postdecimal:
+    - [300, 611, 60, 100]
+  zeit:
+    model: dig-class100-0180-s2-q
+    predecimal:
+    - [187, 405, 56, 103]
+    postdecimal:
+    - [249, 404, 75, 109]
+    - [324, 403, 61, 108]
 
