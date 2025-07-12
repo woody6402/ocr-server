@@ -79,7 +79,7 @@ the tflite files are under ownership of AI-on-the-edge-device and others and the
 
 ## Todos
 - send generated values to a MQTT server  - done V0.91
-- allow match: <regex> patterns to validate resulsts . done V0.92-test
+- allow match: <regex> patterns to validate resulsts . done V0.92.1
 - allow custom code to work on scanned values and to modify return values. done V0.92.1
 - allow simplified model names in config.yaml. done V0.92.1
 - correct handling of digital models: -cont, -11, 100. done V0.92.1
