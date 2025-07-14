@@ -60,37 +60,59 @@ pv:
   transform: balance_sum_zero
 uhr-1:
   rotate: -90
+  padding: 0.2
+  enhance:
+  - autocontrast
   temp:
-    model: dig-class100-0180-s2-q
+    model: digital-class100
     predecimal:
-    - [188, 611, 61, 97]
-    - [250, 611, 49, 102]
+      - [259, 426, 34, 54]
+      - [300, 426, 33, 57]
     postdecimal:
-    - [323, 611, 63, 110]
+      - [330, 426, 35, 56]
+    range: [ 19.0, 28.0 ]       
+
   zeit:
-    model: dig-class100-0180-s2-q
+    model: digital-class100
     predecimal:
-    - [192, 397, 73, 118]
-    postdecimal:
-    - [249, 404, 75, 109]
-    - [324, 403, 61, 108]
+      - [195, 268, 45, 81]
+      - [242, 268, 45, 81]
+    postdecimal:   
+      - [294, 273, 42, 76]
+      - [340, 275, 44, 70]   
 
 uhr-2:
-  rotate: -90
+  rotate: 0
+  padding: 0.2
   enhance:
-    contrast: 0.8
+  - autocontrast
+
   temp:
-    model: dig-class100-0180-s2-q
+    model: digital-class100
     predecimal:
-    - [199, 613, 86, 103]
-    - [250, 611, 49, 102]
+      - [259, 426, 34, 57]
+      - [300, 426, 33, 57]
     postdecimal:
-    - [300, 611, 60, 100]
+      - [330, 426, 35, 56]
+    range: [ 19.0, 28.0 ]           
+
   zeit:
-    model: dig-class100-0180-s2-q
+    model: digital-class100
     predecimal:
-    - [187, 405, 56, 103]
-    postdecimal:
-    - [249, 404, 75, 109]
-    - [324, 403, 61, 108]
+      - [195, 268, 45, 81]
+      - [242, 268, 45, 81]
+    postdecimal:   
+      - [294, 273, 42, 76]
+      - [340, 275, 44, 70]      
+    range: [ 0.0, 24.0 ]
+    match: '[0-2][0-9]\.[0-5][0-9]'
+      
+
+  
+    
+    
+
+
+    
+    
 
