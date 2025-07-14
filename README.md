@@ -70,6 +70,85 @@ Then open: [http://127.0.0.1:5000](http://127.0.0.1:5000)
 └── requirements.txt
 ```
 
+## 🔧 YAML-Konfiguration für OCR-Segmentierung
+
+Die Datei `config.yaml` definiert, wie Bildsegmente ausgeschnitten, mit Modellen verarbeitet und die Ergebnisse validiert werden. Jedes Objekt ist einem `identifier` zugeordnet, z. B. `"uhr-1"`.
+
+### 📁 Struktur
+
+```yaml
+<identifier>:
+  rotate: -90               # optional: Bildrotation in Grad (z. B. -90)
+  padding: 0.1              # optional: 10 % Puffer um jedes Rechteck
+
+  enhance:                  # optional: Bildverbesserung in definierter Reihenfolge
+    - grayscale
+    - autocontrast
+    - contrast: 1.5
+    - threshold: 120
+
+  <key>:                   # z. B. "temp", "zeit"
+    model: tesseract       # z. B. "tesseract", "dig-class100", "lcd-s1"
+    rects:                 # Liste der Bildsegmente als [x, y, w, h]
+      - [100, 200, 40, 30]
+
+    match: \d+(\.\d+)?   # optional: RegEx zur Filterung
+    range: [22.0, 28.0]    # optional: gültiger Wertebereich
+    previous: 2.0          # optional: max. Abweichung vom letzten gültigen Wert
+
+    # alternativ für klassische Zähler:
+    predecimal:
+      - [x, y, w, h]       # Ziffern vor dem Dezimalpunkt
+    postdecimal:
+      - [x, y, w, h]       # Ziffern nach dem Dezimalpunkt
+```
+
+### ✅ Validierungsoptionen
+
+| Option     | Beschreibung                                                               |
+|------------|----------------------------------------------------------------------------|
+| `match`    | RegEx zur Filterung des erkannten Strings                                  |
+| `range`    | Erwarteter Zahlenbereich `[min, max]`                                      |
+| `previous` | Max. Abweichung zum vorherigen gültigen Wert (z. B. zur Glättung)          |
+
+### 📌 Beispiel
+
+```yaml
+uhr-1:
+  rotate: -90
+  enhance:
+    - grayscale
+    - autocontrast
+  padding: 0.05
+
+  zeit:
+    model: dig-class100
+    predecimal:
+      - [100, 200, 20, 30]
+      - [130, 200, 20, 30]
+    postdecimal:
+      - [160, 200, 20, 30]
+    range: [0.0, 9.9]
+    previous: 1.0
+
+  temp:
+    model: tesseract
+    rects:
+      - [50, 100, 60, 25]
+    match: \d+(\.\d+)?
+    range: [15.0, 35.0]
+```
+
+### 🔄 Live-Konfigurations-Reload
+
+Die Konfiguration kann zur Laufzeit neu geladen werden:
+
+```bash
+curl -X POST http://<host>:5000/test-config?save=true \
+     --data-binary @config.yaml \
+     -H "Content-Type: text/yaml"
+```
+
 ## 🔗 Related Projects
 
 - [jomjol/AI-on-the-edge-device](https://github.com/jomjol/AI-on-the-edge-device) – OCR system for ESP32 camera-based devices
