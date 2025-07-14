@@ -86,8 +86,8 @@ the tflite files are under ownership of AI-on-the-edge-device and others and the
 - allow simplified model names in config.yaml. done V0.92.1
 - correct handling of digital models: -cont, -11, 100. done V0.92.1
 - add a possible rotation to the image. done V0.92.1
-- add matching criteria range V0.92.2
-- add image filter: enhance (contrast, sharpen, brightness, sharpen, autocontrast): V0.92.2
-- add padding (exact image crop and adjustable bar around): V0.92.2
+- add matching criteria range V0.92.3
+- add image filter: enhance (contrast, sharpen, brightness, sharpen, autocontrast): V0.92.3
+- add padding (exact image crop and adjustable bar around): V0.92.3
 
 
