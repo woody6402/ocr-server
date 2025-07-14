@@ -110,6 +110,8 @@ def run_model(image: Image.Image, model_name: str) -> dict:
         return run_color_model(image, model_name)
     elif model_name.startswith("led-") or model_name == "led":
         return run_led_model(image, model_name)
+    elif model_name.startswith("lcd-"):
+        return run_lcd_sequence_model(image, model_name)
     else:
         return run_tesseract_model(image, model_name)
 
@@ -187,7 +189,7 @@ def run_digit_model(image: Image.Image, model_name: str) -> dict:
 
     logging.info(f"[DIGIT MODEL] Class Index: {predicted_index}")
     logging.info(f"[DIGIT MODEL] Calculated Value: {digit_value}")
-    logging.info(f"[DIGIT MODEL] Raw Scores: {output_data}")
+#    logging.info(f"[DIGIT MODEL] Raw Scores: {output_data}")
 
     return {
         "class_index": predicted_index,
@@ -218,7 +220,7 @@ def run_digit_model_x(image: Image.Image, model_name: str) -> dict:
     output_data = interpreter.get_tensor(output_details[0]['index'])[0]
     predicted_class = int(np.argmax(output_data))
     logging.info(f"[DIGITAL MODEL] Digit: {predicted_class}")
-    logging.info(f"[DIGITAL MODEL] Digit: {output_data}")
+#    logging.info(f"[DIGITAL MODEL] Digit: {output_data}")
    
 
     return {
@@ -250,6 +252,86 @@ def digit_from_vector(f1: float, f2: float) -> float:
     raw_angle = atan2(f1, f2)
     normalized = fmod(raw_angle / (2 * pi) + 2, 1)
     return normalized * 10
+
+import string
+alphabet = string.digits + string.ascii_lowercase + '.'
+blank_index = len(alphabet)
+
+import numpy as np
+from PIL import Image
+
+
+def prepare_input_pil1(image: Image.Image, input_shape) -> np.ndarray:
+    _, height, width, channels = input_shape
+
+    # 1. Format konvertieren
+    if channels == 1:
+        image = image.convert("L")
+    else:
+        image = image.convert("RGB")
+
+    # 2. Resize
+    image = image.resize((200, 31))
+
+    # 3. In Array & normalisieren
+    img_array = np.asarray(image, dtype=np.float32) / 255.0
+
+    # 4. ggf. Channel-Dimension hinzufügen
+    if channels == 1 and img_array.ndim == 2:
+        img_array = img_array[:, :, np.newaxis]  # → [H, W, 1]
+
+    # 5. Batch-Dimension hinzufügen
+    img_array = np.expand_dims(img_array, axis=0)  # → [1, H, W, C]
+    
+    return img_array
+
+def prepare_input_pil(image: Image.Image, input_shape) -> np.ndarray:
+    _, height, width, channels = input_shape
+
+    image = image.convert("L")
+    image = image.resize((width, height))
+    input_data = np.asarray(image, dtype=np.float32) / 255.0
+    #input_data = input_data[:, :, np.newaxis]  # [1, 32, 20, 1]
+    input_data = np.stack([input_data]*3, axis=-1)
+    #input_data = np.expand_dims(input_data, 3) 
+    input_data = np.expand_dims(input_data, axis=0)  # → [1, H, W, C]
+    input_data = input_data.astype('float32')/255
+    
+    return input_data
+
+def run_lcd_sequence_model(image: Image.Image, model_name: str) -> dict:
+    model_path = f"models/{model_name}.tflite"
+    
+    if model_name not in interpreter_cache:
+        interpreter_cache[model_name] = tf.lite.Interpreter(model_path=model_path)
+        interpreter_cache[model_name].allocate_tensors()
+    interpreter = interpreter_cache[model_name]
+        
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()  
+
+    # Resize and normalize the input image
+    input_shape = input_details[0]['shape']
+    #width, height = input_shape[2], input_shape[1]
+
+    #img = image.resize((width, height)).convert("RGB")
+    #img_array = np.asarray(img, dtype=np.float32) / 255.0
+    #img_array = np.expand_dims(img_array, axis=(0, -1))  # shape: (1, H, W, 1)
+    #img_array = np.expand_dims(img_array, axis=0)
+ 
+    img_array = prepare_input_pil(image,input_shape)
+    
+    interpreter.set_tensor(input_details[0]['index'], img_array)
+    interpreter.invoke()
+
+    output = interpreter.get_tensor(output_details[0]['index'])  # shape: (timesteps,)
+    logging.info(f"[LCD MODEL] {output} {alphabet} {blank_index}")    
+    text = "".join(alphabet[int(i)] for i in output[0] if int(i) not in [blank_index, -1])
+
+    return {
+        "class": text,
+        "raw_indices": output.tolist()
+    }
 
 
 def run_analog_model(image: Image.Image, model_name: str) -> dict:
@@ -300,8 +382,54 @@ def is_valid_value(value: str, match_pattern: str) -> bool:
 
 
 from transformations import apply_transformations  # Stelle sicher, dass du transformations.py hast
-from PIL import ImageEnhance, ImageOps
+from PIL import ImageEnhance, ImageOps, ImageFilter
 
+
+def apply_enhancement(image, identifier, enhance_steps):
+
+    for step in enhance_steps:
+    
+        step_str = (
+            "_".join(f"{k}-{v}" for k, v in step.items())
+            if isinstance(step, dict)
+            else str(step)
+        )
+        
+        logging.info(f"[PIC Enhance]: {step_str}")
+        if isinstance(step, str):
+            # Einfache Schritte ohne Parameter
+            if step == "grayscale":
+                image = image.convert("L")
+            elif step == "autocontrast":
+                image = ImageOps.autocontrast(image)
+            elif step == "invert":
+                image = ImageOps.invert(image)
+
+        elif isinstance(step, dict):
+            # Schritte mit Parametern
+            if "contrast" in step:
+                factor = float(step["contrast"])
+                image = ImageEnhance.Contrast(image).enhance(factor)
+            elif "threshold" in step:
+                t = int(step["threshold"])
+                if image.mode != "L":
+                    image = image.convert("L")
+                image = image.point(lambda x: 255 if x > t else 0)
+                image = image.convert("1")
+            elif "brightness" in step:
+                factor = float(step["brightness"])  # z. B. 1.8
+                image = ImageEnhance.Brightness(image).enhance(factor) 
+                
+            elif "sharpen" in step:
+                factor = float(step["sharpen"])
+                image = image.filter(ImageFilter.UnsharpMask(radius=2, percent=int(150 * factor)))
+
+        # 🔽 Bild zur Kontrolle speichern
+        image.save(f"images/{identifier}_{step_str}_debug.jpg")
+    return image
+    
+value_last = {}
+    
 @app.route("/segment", methods=["POST"])
 def segment_and_ocr():
     if "identifier" not in request.form or "image" not in request.files:
@@ -326,36 +454,22 @@ def segment_and_ocr():
     image.save(f"images/{identifier}_debug.jpg")
         
     # Bildoptimierung je nach Konfiguration
-    enhance_cfg = definition.get("enhance", {})
-
-    if enhance_cfg.get("grayscale", False):
-        image = image.convert("L")
-
-    if "contrast" in enhance_cfg:
-        enhancer = ImageEnhance.Contrast(image)
-        factor = float(enhance_cfg["contrast"])
-        image = enhancer.enhance(factor)
-
-    if enhance_cfg.get("invert", False):
-        image = ImageOps.invert(image)
-
-    if "threshold" in enhance_cfg:
-        threshold = int(enhance_cfg["threshold"])
-        image = image.point(lambda x: 255 if x > threshold else 0, mode="1")
+    image = apply_enhancement(image, identifier, definition.get("enhance", []))
         
     # 🔽 Bild zur Kontrolle speichern
     image.save(f"images/{identifier}_Edebug.jpg")
 
     results = []
+    
+    padding = definition.get("padding", 0.0) 
 
     for key, section in definition.items():
-        if key == "transform" or key == "rotate" or key == "enhance":
+        if key == "transform" or key == "rotate" or key == "enhance" or key == "padding" :
             continue  # skip transform block
 
         model = section.get("model", "tesseract")
         logging.info(f"[PIC Parsing] Section: {key}, Model: {model}")
 
-        match_pattern = section.get("match")
         value = None
 
         if "predecimal" in section or "postdecimal" in section:
@@ -363,7 +477,16 @@ def segment_and_ocr():
             for group in ["predecimal", "postdecimal"]:
                 for rect in section.get(group, []):
                     x, y, w, h = rect
-                    segment = image.crop((x, y, x + w, y + h))
+                    # segment = image.crop((x, y, x + w, y + h))
+                    
+                    segment = image.crop((
+                        max(0, x - int(w * padding)),
+                        max(0, y - int(h * padding)),
+                        min(image.width,  x + w + int(w * padding)),
+                        min(image.height, y + h + int(h * padding))
+                    ))
+                    segment.save(f"images/{identifier}_{key}_{x}{y}_debug.jpg")
+                    
                     result = run_model(segment, model)
                     digits.append(str(result.get("class", "?")))
 
@@ -377,20 +500,50 @@ def segment_and_ocr():
             for rect in section["rects"]:
                 x, y, w, h = rect
                 segment = image.crop((x, y, x + w, y + h))
+                segment.save(f"images/{identifier}_{key}_{x}{y}_debug.jpg")
                 result = run_model(segment, model)
                 values.append(result.get("class", ""))
 
-            if model == "tesseract":
+            if model == "tesseract" or model.startswith("lcd-"): 
                 value = "".join(str(v) for v in values if v != "")
             else:
                 value = values[0]
 
         # Pattern match anwenden
-        if match_pattern and isinstance(value, str):
-            match = re.search(match_pattern, value)
+        if "match" in section and isinstance(value, str):
+            match = re.search(section["match"], value)
             orig = value
             value = match.group(0) if match else ""
             logging.info(f"[Validation] Scanned value '{orig}' matched: '{value}'")
+
+        # Bereichsprüfung (range)
+        if "range" in section and isinstance(value, str):
+            try:
+                val_f = float(value)
+                r_min, r_max = section["range"]
+                if not (r_min <= val_f <= r_max):
+                    logging.warning(f"[Validation] Value '{val_f}' for '{key}' out of range {r_min}–{r_max}")
+                    value = "?"
+            except Exception as e:
+                logging.warning(f"[Validation] Failed to check range for value '{value}': {e}")
+                value = "?"
+
+        # Vorwert-Prüfung (previous)
+        if "previous" in section and isinstance(value, str):
+            try:
+                val_f = float(value)
+                prev_val = value_last.get((identifier, key))
+                max_diff = section["previous"]
+
+                if prev_val is not None and abs(val_f - prev_val) > max_diff:
+                    logging.warning(f"[Validation] Value '{val_f}' for '{key}' differs too much from previous '{prev_val}' (>{max_diff})")
+                    value = ""
+                else:
+                    value_last[(identifier, key)] = val_f
+            except Exception as e:
+                logging.warning(f"[Validation] Failed to check previous for value '{value}': {e}")
+                value = ""
+
 
         logging.info(f"[PIC Parsing] Final Value: {value}")
         results.append({
@@ -405,7 +558,6 @@ def segment_and_ocr():
             apply_transformations(transform_conf, results)
         except Exception as e:
             logging.error(f"[Transform] Failed to apply transformations: {e}")
-
     # MQTT senden, falls konfiguriert
     mqtt_config = config.get("mqtt")
     if mqtt_config:
