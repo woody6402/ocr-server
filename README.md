@@ -72,56 +72,56 @@ Then open: [http://127.0.0.1:5000](http://127.0.0.1:5000)
 
 ## 🔧 YAML-Konfiguration für OCR-Segmentierung
 
-Die Datei `config.yaml` definiert, wie Bildsegmente ausgeschnitten, mit Modellen verarbeitet und die Ergebnisse validiert werden. Jedes Objekt ist einem `identifier` zugeordnet, z. B. `"uhr-1"`.
+The `config.yaml` file defines how image segments are cut out, processed with models and the results validated. Each object is assigned an `identifier`, e.g. `‘clock-1’`.
 
 ### 📁 Struktur
 
 ```yaml
 <identifier>:
-  rotate: -90               # optional: Bildrotation in Grad (z. B. -90)
-  padding: 0.1              # optional: 10 % Puffer um jedes Rechteck
+  rotate: -90               # optional: image rotation in degrees
+  padding: 0.1              # optional: 10 % additional space around each rect
 
-  enhance:                  # optional: Bildverbesserung in definierter Reihenfolge
+  enhance:                  # optional: image enhancements
     - grayscale
     - autocontrast
     - contrast: 1.5
     - threshold: 120
 
-  <key>:                   # z. B. "temp", "zeit"
-    model: tesseract       # z. B. "tesseract", "dig-class100", "lcd-s1"
-    rects:                 # Liste der Bildsegmente als [x, y, w, h]
+  <key>:                   
+    model: tesseract       # i.e. "tesseract", "dig-class100", "dig-class11"
+    rects:                 # list of image segments  [x, y, w, h]
       - [100, 200, 40, 30]
 
-    match: \d+(\.\d+)?   # optional: RegEx zur Filterung
-    range: [22.0, 28.0]    # optional: gültiger Wertebereich
-    previous: 2.0          # optional: max. Abweichung vom letzten gültigen Wert
+    match: \d+(\.\d+)?   # optional: RegEx for filtering
+    range: [22.0, 28.0]    # optional: allowed range
+    previous: 2.0          # optional: tbd
 
-    # alternativ für klassische Zähler:
+    # alternativ for float values
     predecimal:
-      - [x, y, w, h]       # Ziffern vor dem Dezimalpunkt
+      - [x, y, w, h]       # digits before the decimal point
+      ...
     postdecimal:
-      - [x, y, w, h]       # Ziffern nach dem Dezimalpunkt
-```
+      - [x, y, w, h]       # digits after
+      ...```
 
-### ✅ Validierungsoptionen
-
+### ✅ Validating
 | Option     | Beschreibung                                                               |
 |------------|----------------------------------------------------------------------------|
-| `match`    | RegEx zur Filterung des erkannten Strings                                  |
-| `range`    | Erwarteter Zahlenbereich `[min, max]`                                      |
-| `previous` | Max. Abweichung zum vorherigen gültigen Wert (z. B. zur Glättung)          |
+| `match`    | RegEx for filtering of strings                                             |
+| `range`    | expected range  `[min, max]`                                               |
+| `previous` | TBD        |
 
-### 📌 Beispiel
+### 📌 Example
 
 ```yaml
-uhr-1:
+clock-1:
   rotate: -90
   enhance:
     - grayscale
     - autocontrast
   padding: 0.05
 
-  zeit:
+  time:
     model: dig-class100
     predecimal:
       - [100, 200, 20, 30]
@@ -131,7 +131,7 @@ uhr-1:
     range: [0.0, 9.9]
     previous: 1.0
 
-  temp:
+  tmp:
     model: tesseract
     rects:
       - [50, 100, 60, 25]
@@ -139,9 +139,9 @@ uhr-1:
     range: [15.0, 35.0]
 ```
 
-### 🔄 Live-Konfigurations-Reload
+### 🔄 Live-Configurations-Reload
 
-Die Konfiguration kann zur Laufzeit neu geladen werden:
+The configuration can be reloaded during run-time
 
 ```bash
 curl -X POST http://<host>:5000/test-config?save=true \
