@@ -8,6 +8,36 @@
       font-family: sans-serif;
       max-width: 900px;
       margin: auto;
+      padding: 20px;
+      background-color: #f8f9fa;
+    }
+
+    h2, h3 {
+      color: #333;
+    }
+
+    label {
+      font-weight: bold;
+      margin-top: 10px;
+      display: inline-block;
+    }
+
+    input, select, button {
+      margin: 4px 0 10px;
+      padding: 6px;
+      font-size: 1rem;
+    }
+
+    button {
+      cursor: pointer;
+      background-color: #007BFF;
+      border: none;
+      color: white;
+      border-radius: 4px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
     }
 
     canvas {
@@ -24,24 +54,31 @@
     }
 
     img {
-      max-width: 100%;
+      max-width: 400;
       display: block;
     }
+    
 
     textarea {
       width: 100%;
       height: 200px;
       margin-top: 20px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 0.95rem;
     }
+
+
 
     #crosshair {
       position: absolute;
-      top: 0;
-      left: 0;
+
       width: 100%;
       height: 100%;
       pointer-events: none;
       z-index: 3;
+      top: 0;
+      left: 0;
     }
 
     #crosshair .h-line,
@@ -59,56 +96,105 @@
       width: 1px;
       height: 100%;
     }
+
+    details {
+      background: #e9ecef;
+      padding: 10px;
+      border-radius: 5px;
+    }
   </style>
 </head>
 <body>
   <h2>Segment Editor</h2>
 
-  <label for="identifierInput">Meter name:</label>
+  <label for="identifierInput">Zählerkennung:</label><br>
   <input type="text" id="identifierInput" value="meter-1" />
 
   <br><br>
 
-  <label for="sectionInput">New segment:</label>
-  <input type="text" id="sectionInput" placeholder="d1" />
-  <button onclick="addSection()">Add</button>
-
-  <br><br>
-
-  <label for="sectionSelect">Choose segment:</label>
+  <label for="sectionSelect">Segment wählen:</label>
   <select id="sectionSelect" onchange="updateOutput()">
-      <option value="d1">d1</option>
-      <option value="a1">a1</option>
-      <option value="t1">t1</option>
+    <option value="d1">d1</option>
+    <option value="a1">a1</option>
+    <option value="t1">t1</option>
   </select>
-  <button onclick="deleteCurrentSection()">Delete</button>
+
+  <button onclick="deleteCurrentSection()">❌ Löschen</button>
+
+  <label for="sectionInput">Neues Segment:</label>
+  <input type="text" id="sectionInput" placeholder="d1" />
+  <button onclick="addSection()">➕ Hinzufügen</button>
 
   <br><br>
 
-  <label for="modelSelect">Model type:</label>
+  <label for="modelSelect">Model-Typ:</label>
   <select id="modelSelect">
     <option value="digital-cont">digital-cont</option>
-    <option value="digital-class11">digital-class11</option>   
-    <option value="digital-class100">digital-class100</option>        
+    <option value="digital-class11">digital-class11</option>
+    <option value="digital-class100">digital-class100</option>
     <option value="analog">analog</option>
+    <option value="color">color</option>
+    <option value="led">led</option>
     <option value="tesseract">tesseract</option>
   </select>
+
+  <label for="subgroupSelect">Gruppe:</label>
+  <select id="subgroupSelect">
+    <option value="predecimal">predecimal</option>
+    <option value="postdecimal">postdecimal</option>
+    <option value="rects">rects</option>
+  </select>
+
+  <br><br>
+
+  <details>
+    <summary>🛠️ Erweiterte Einstellungen anzeigen</summary>
+    
+ <label>Enhance (Kommasepariert):</label><br>
+  <div style="display: flex; gap: 10px; align-items: center;">
+    <input id="enhanceInput" placeholder="z.B. grayscale,autocontrast,threshold=120" style="flex: 1;" />
+    <select id="enhanceSelect">
+      <option value="">➕ Einfügen</option>
+      <option value=""></option>
+      <option value="grayscale">grayscale</option>
+      <option value="autocontrast">autocontrast</option>
+      <option value="contrast:">contrast:</option>
+      <option value="threshold:">threshold:</option>
+      <option value="brightness:">brightness:</option>
+      <option value="sharpen">sharpen</option>
+    </select>
+    <input id="enhanceValue" type="text" placeholder="Wert" style="width: 80px;" />
+  </div>
   
-<label for="subgroupSelect">Group:</label>
-<select id="subgroupSelect">
-  <option value="predecimal">predecimal</option>
-  <option value="postdecimal">postdecimal</option>
-  <option value="rects">rects</option>
-</select>  
-<br>
+    <label>Padding (%):</label><br>
+    <input id="paddingInput" type="number" step="0.01" placeholder="z.B. 0.1" /><br>
 
-<div style="margin-top: 10px;">
-  <button onclick="sendTestConfig(false)">🧪 Test</button>
-  <button onclick="sendTestConfig(true)">💾 Save</button>
-  <button onclick="sendImageToSegment()">🔍 Scan</button>
-</div>
+    <label>Rotate (°):</label><br>
+    <input id="rotate" type="number" placeholder="z.B. -90" /><br>
 
+    <label>Match (Regex):</label><br>
+    <input id="matchInput" placeholder="z.B. \d+(\.\d+)?" /><br>
 
+    <label>Range min/max:</label><br>
+    <input id="rangeMin" type="number" step="any" placeholder="min" />
+    <input id="rangeMax" type="number" step="any" placeholder="max" /><br>
+
+    <label>Max Abweichung zu vorher:</label><br>
+    <input id="previousDiff" type="number" step="any" /><br>
+
+    <label>Historienlänge:</label><br>
+    <input id="historyLength" type="number" step="1" /><br>
+  </details>
+
+  <div style="margin-top: 15px;">
+    <button onclick="sendTestConfig(false)">🧪 Test</button>
+    <button onclick="sendTestConfig(true)">💾 Speichern</button>
+    <button onclick="sendImageToSegment()">🔍 Scan</button>
+  </div>
+
+  <h3>📸 Neues Bild hochladen</h3>
+  <input type="file" id="imageUpload" accept="image/*">
+  <button onclick="uploadAndReplaceImage()">Bild laden</button>
 
   <div id="wrapper">
     <img id="sourceImage" src="/images/{{ image_name }}" alt="Source Image" />
@@ -120,6 +206,9 @@
   </div>
 
   <textarea id="output" readonly></textarea>
+</body>
+</html>
+
 
 <script>
     const img = document.getElementById("sourceImage");
@@ -138,84 +227,162 @@
 
     let segments = {};  // z. B. { meter1: [{x,y,w,h,modelType}, ...] }
 
-    let startX, startY, isDrawing = false;
+    let startX, startY;
+ 
+    let isDrawing = false;   
+    let isDragging = false;
 
-    function getScaleFactor() {
-      return {
-        x: img.naturalWidth / img.clientWidth,
-        y: img.naturalHeight / img.clientHeight
-      };
-    }
+    let selectedRect = null;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+    
+    let replaceIndex = null;
 
-    img.onload = () => {
-      canvas.width = img.clientWidth;
-      canvas.height = img.clientHeight;
-      crosshair.style.width = canvas.width + "px";
-      crosshair.style.height = canvas.height + "px";
-    };
+let imageRect = null;
 
-    canvas.addEventListener("mousedown", (e) => {
-      const rect = canvas.getBoundingClientRect();
-      startX = e.clientX - rect.left;
-      startY = e.clientY - rect.top;
-      isDrawing = true;
-    });
+function getScaleFactor1() {
+  return {
+    x: img.naturalWidth / img.clientWidth,
+    y: img.naturalHeight / img.clientHeight
+  };
+}
 
-    canvas.addEventListener("mouseup", (e) => {
-      if (!isDrawing) return;
-      const rect = canvas.getBoundingClientRect();
-      const endX = e.clientX - rect.left;
-      const endY = e.clientY - rect.top;
-      const w = endX - startX;
-      const h = endY - startY;
+function getScaleFactor() {
+  const rect = img.getBoundingClientRect();
+  
+  console.log("img top:", img.getBoundingClientRect());
+  console.log("canvas top:", canvas.getBoundingClientRect());
 
-      const scale = getScaleFactor();
-      const modelType = modelSelect.value || "digital";
+  a = {
+    x: img.naturalWidth / rect.width,
+    y: img.naturalHeight / rect.height
+  };
+  console.log(a,rect);
+  return a;
+}
 
-      const activeSection = sectionSelect.value;
-      if (!segments[activeSection]) segments[activeSection] = [];
-      
-let group = "rects";  // Default für analog/tesseract
-
-
-if (modelType.startsWith("digital")) {
-  group = document.getElementById("subgroupSelect").value || "predecimal";
-}  
-
-        segments[activeSection].push({
-          x: startX * scale.x,
-          y: startY * scale.y,
-          w: w * scale.x,
-          h: h * scale.y,
-          modelType: modelType,
-          group: group
-        });
+img.onload = () => {
+  canvas.width = img.clientWidth;
+  canvas.height = img.clientHeight;
+  crosshair.style.width = canvas.width + "px";
+  crosshair.style.height = canvas.height + "px";
+};
 
 
-      isDrawing = false;
+    
+canvas.addEventListener("mousedown", (e) => {
+  //const rect = img.getBoundingClientRect();
+  imageRect = img.getBoundingClientRect();  // speichern für mouseup!
+  const mouseX = e.clientX - imageRect.left;
+  const mouseY = e.clientY - imageRect.top;
+  const scale = getScaleFactor();
+
+  const activeSection = sectionSelect.value;
+  const sectionRects = segments[activeSection] || [];
+
+  for (let i = 0; i < sectionRects.length; i++) {
+    const r = sectionRects[i];
+    const rx = r.x / scale.x;
+    const ry = r.y / scale.y;
+    const rw = r.w / scale.x;
+    const rh = r.h / scale.y;
+
+    if (
+      mouseX >= r.x && mouseX <= r.x + r.w / 2 &&
+      mouseY >= r.y + r.h / 2 && mouseY <= r.y + r.h
+
+    ) {
+      // Rechteck löschen und Index merken
+      sectionRects.splice(i, 1);
+      replaceIndex = i;
       redraw();
       updateOutput();
-    });
+      return;
+    }
+  }
 
-    canvas.addEventListener("mousemove", (e) => {
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+  // Kein Rechteck angeklickt → neues Zeichnen
+  startX = mouseX;
+  startY = mouseY;
+  isDrawing = true;
+});
 
-      hLine.style.top = y + "px";
-      vLine.style.left = x + "px";
-    });
+
+canvas.addEventListener("mouseup", (e) => {
+  if (!isDrawing) return;
+
+  //const rect = img.getBoundingClientRect();
+  //const endX = e.clientX - rect.left;
+  //const endY = e.clientY - rect.top;
+  
+  const endX = e.clientX - imageRect.left;
+  const endY = e.clientY - imageRect.top;
+  
+  const w = endX - startX;
+  const h = endY - startY;
+
+  const scale = getScaleFactor();
+  const modelType = modelSelect.value || "digital";
+  const group = modelType.startsWith("digital") ? subgroupSelect.value || "predecimal" : "rects";
+
+
+const startX_original = startX;
+const startY_original = startY;
+
+const x1 = Math.min(startX_original, endX);
+const x2 = Math.max(startX_original, endX);
+const y1 = Math.min(startY_original, endY);
+const y2 = Math.max(startY_original, endY);
+
+const newRect = {
+  x: x1 * scale.x,
+  y: y1 * scale.y,
+  w: (x2 - x1) * scale.x,
+  h: (y2 - y1) * scale.y,
+  modelType: modelType,
+  group: group
+};
+
+  const activeSection = sectionSelect.value;
+  if (!segments[activeSection]) segments[activeSection] = [];
+
+  if (replaceIndex !== null) {
+    segments[activeSection].splice(replaceIndex, 0, newRect);
+    replaceIndex = null;
+  } else {
+    segments[activeSection].push(newRect);
+  }
+
+  isDrawing = false;
+  redraw();
+  updateOutput();
+});
+
+
+
+canvas.addEventListener("mousemove", (e) => {
+  const rect = img.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  hLine.style.top = y + "px";
+  vLine.style.left = x + "px";
+});
+
+ 
     
-    document.getElementById("modelSelect").addEventListener("change", function () {
-      const model = this.value;
-      const subgroupSelect = document.getElementById("subgroupSelect");
+document.getElementById("modelSelect").addEventListener("change", function () {
+  const model = this.value;
+  const subgroupSelect = document.getElementById("subgroupSelect");
 
-      if (model.startsWith("digital")) {
-        subgroupSelect.style.display = "inline";
-      } else {
-        subgroupSelect.style.display = "none";
-      }
-    });
+  if (model.startsWith("digital")) {
+    subgroupSelect.style.display = "inline";
+  } else {
+    subgroupSelect.style.display = "none";
+  }
+});
+    
+    
 
     
 function redraw() {
@@ -229,7 +396,8 @@ function redraw() {
   const colors = {
     predecimal: "#007bff",   // Blau
     postdecimal: "#fd7e14",  // Orange
-    rects: "#28a745"       // Grün
+    rects: "#28a745",       // Grün
+    color: "#6f42c1"  // z. B. Lila
   };
 
   for (let key in segments) {
@@ -252,7 +420,28 @@ function updateOutput() {
   };
 
   let yaml = `${identifier}:\n`;
+  
+const enhance = document.getElementById("enhanceInput")?.value.trim();
+if (enhance) {
+  const enhParts = enhance.split(",").map(e => {
+    const [key, val] = e.includes(":") ? e.split(":") : [e.trim(), "true"];
+    return { key: key.trim(), value: val.trim() };
+  });
 
+  yaml += `  enhance:\n`;
+  enhParts.forEach(({ key, value }) => {
+    console.log(key,value);
+    // Versuche, Wert in Zahl umzuwandeln, wenn möglich
+    const parsedVal = isNaN(value) ? value : parseFloat(value);
+    yaml += `      - ${key}: ${parsedVal}\n`;
+  });
+}
+  const padding = document.getElementById("paddingInput")?.value;
+  if (padding) yaml += `  padding: ${padding}\n`;
+
+  const rotate = document.getElementById("rotate")?.value;
+  if (rotate) yaml += `  rotate: ${rotate}\n`;
+  
   for (let sectionName in segments) {
     const sectionRects = segments[sectionName];
     if (!sectionRects || sectionRects.length === 0) continue;
@@ -276,20 +465,43 @@ function updateOutput() {
         grouped[group].push(r);
       }
     });
+    
+    if (selectorSettings[sectionName]) {
+      const settings = selectorSettings[sectionName];
+
+      if (settings.matchInput)
+        yaml += `    match: ${settings.matchInput}\n`;
+      if (settings.rangeMin != null && settings.rangeMax != null)
+        yaml += `    range: [ ${settings.rangeMin}, ${settings.rangeMax} ]\n`;
+      if (settings.previousDiff != null)
+        yaml += `    previous: ${settings.previousDiff}\n`;
+      if (settings.historyLength != null)
+        yaml += `    history: ${settings.historyLength}\n`;
+    }
 
     // YAML-Ausgabe für jede Gruppe
     for (const groupName of ["predecimal", "postdecimal", "rects"]) {
       if (grouped[groupName].length > 0) {
         yaml += `    ${groupName}:\n`;
+     
         grouped[groupName].forEach(r => {
           yaml += `      - [${Math.round(r.x)}, ${Math.round(r.y)}, ${Math.round(r.w)}, ${Math.round(r.h)}]\n`;
+
         });
-      }
+       }
     }
   }
 
   output.value = yaml;
 }
+
+document.getElementById("sectionInput").addEventListener("keydown", function(event) {
+  if (event.key === "Enter") {
+    event.preventDefault(); // Verhindert Form-Submit o. Ä.
+    addSection();
+    this.value = "";
+  }
+});
 
 
     function addSection() {
@@ -309,7 +521,7 @@ function updateOutput() {
       const selected = sectionSelect.value;
       if (selected && segments[selected]) {
         delete segments[selected];
-        sectionSelect.remove(sectionSelect.selectedIndex);
+        // sectionSelect.remove(sectionSelect.selectedIndex);
         updateOutput();
         redraw();
       }
@@ -364,6 +576,143 @@ function sendImageToSegment() {
     });
 }
 
+function uploadAndReplaceImage() {
+  const fileInput = document.getElementById("imageUpload");
+  const file = fileInput.files[0];
+  if (!file) {
+    alert("Bitte ein Bild auswählen.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("image", file);
+
+  fetch("/upload-image", {
+    method: "POST",
+    body: formData
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.filename) {
+        cImage = document.getElementById("sourceImage");
+        cImage.src = "/images/" + data.filename + "?t=" + new Date().getTime();
+        alert("✅ Bild wurde aktualisiert.");
+        cImage.onload = () => {
+            redraw();  // Nur neu zeichnen, wenn das neue Bild geladen ist   
+        };
+        
+      } else {
+        alert("❌ Fehler: " + JSON.stringify(data));
+      }
+    })
+    .catch(err => {
+      alert("❌ Upload fehlgeschlagen:\n" + err);
+    });
+}
+
+
+const selectorSettings = {};  // z.B. { zeit: { match: "...", rangeMin: ..., ... } }
+
+function bindDetailInputsToSelectorDynamic() {
+  const inputs = [
+    "matchInput",
+    "rangeMin",
+    "rangeMax",
+    "previousDiff",
+    "historyLength"
+  ];
+
+  inputs.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    el.addEventListener("input", () => {
+      const selected = document.getElementById("sectionSelect")?.value;
+      if (!selected) return;
+
+      if (!selectorSettings[selected]) selectorSettings[selected] = {};
+      selectorSettings[selected][id] = el.type === "number" ? parseFloat(el.value) : el.value;
+      updateOutput();
+    });
+  });
+  
+   const fields = [
+    "paddingInput",
+    "rotate"
+  ]; 
+  
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    el.addEventListener("input", () => {
+      updateOutput();
+    });
+  });
+  
+  
+}
+
+function restoreInputsForSelectedSection() {
+  const selected = document.getElementById("sectionSelect")?.value;
+  if (!selected || !selectorSettings[selected]) return;
+
+  const settings = selectorSettings[selected];
+
+  const mapping = {
+    matchInput: "text",
+    rangeMin: "number",
+    rangeMax: "number",
+    previousDiff: "number",
+    historyLength: "number"
+  };
+
+  Object.entries(mapping).forEach(([id, type]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    const value = settings[id];
+    if (value !== undefined) {
+      el.value = value;
+    } else {
+      el.value = ""; // leeren, falls für neuen Selektor nichts gespeichert
+    }
+  });
+}
+
+
+bindDetailInputsToSelectorDynamic();
+
+document.getElementById("sectionSelect").addEventListener("change", () => {
+  restoreInputsForSelectedSection();
+});
+
+
+document.getElementById("enhanceSelect").addEventListener("change", function () {
+  const selected = this.value;
+  if (!selected) return;
+
+  const input = document.getElementById("enhanceInput");
+  const valueField = document.getElementById("enhanceValue");
+  const current = input.value.trim();
+  const items = current ? current.split(",").map(s => s.trim()) : [];
+
+  let finalEntry = selected;
+  if (selected.endsWith(":")) {
+    const val = valueField.value.trim();
+    if (!val) return alert("Bitte einen Wert eingeben!");
+    finalEntry = selected.slice(0, -1) + ":" + val;
+  }
+
+  if (!items.includes(finalEntry)) {
+    items.push(finalEntry);
+    input.value = items.join(", ");
+  }
+
+  this.value = "";         // Dropdown zurücksetzen
+  valueField.value = "";   // Eingabefeld zurücksetzen
+  updateOutput();
+});
 
     
     
