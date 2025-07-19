@@ -429,6 +429,45 @@ def apply_enhancement(image, identifier, enhance_steps):
     return image
     
 value_last = {}
+
+def apply_matchtests(identifier,key,section,value):
+
+        # Pattern match anwenden
+        if "match" in section and isinstance(value, str):
+            match = re.search(section["match"], value)
+            orig = value
+            value = match.group(0) if match else ""
+            logging.info(f"[Validation] Scanned value '{orig}' matched: '{value}'")
+
+        # Bereichsprüfung (range)
+        if "range" in section and isinstance(value, str):
+            try:
+                val_f = float(value)
+                r_min, r_max = section["range"]
+                if not (r_min <= val_f <= r_max):
+                    logging.warning(f"[Validation] Value '{val_f}' for '{key}' out of range {r_min}–{r_max}")
+                    value = ""
+            except Exception as e:
+                logging.warning(f"[Validation] Failed to check range for value '{value}': {e}")
+                value = ""
+
+        # Vorwert-Prüfung (previous)
+        if "previous" in section and isinstance(value, str):
+            try:
+                val_f = float(value)
+                prev_val = value_last.get((identifier, key))
+                max_diff = section["previous"]
+
+                if prev_val is not None and abs(val_f - prev_val) > max_diff:
+                    logging.warning(f"[Validation] Value '{val_f}' for '{key}' differs too much from previous '{prev_val}' (>{max_diff})")
+                    value = ""
+                else:
+                    value_last[(identifier, key)] = val_f
+            except Exception as e:
+                logging.warning(f"[Validation] Failed to check previous for value '{value}': {e}")
+                value = ""
+
+        return value
     
 @app.route("/segment", methods=["POST"])
 def segment_and_ocr():
@@ -485,7 +524,7 @@ def segment_and_ocr():
                         min(image.width,  x + w + int(w * padding)),
                         min(image.height, y + h + int(h * padding))
                     ))
-                    segment.save(f"images/{identifier}_{key}_{x}{y}_debug.jpg")
+                    segment.save(f"images/{identifier}_{key}_{x}{y}{w}{h}_debug.jpg")
                     
                     result = run_model(segment, model)
                     digits.append(str(result.get("class", "?")))
@@ -509,41 +548,8 @@ def segment_and_ocr():
             else:
                 value = values[0]
 
-        # Pattern match anwenden
-        if "match" in section and isinstance(value, str):
-            match = re.search(section["match"], value)
-            orig = value
-            value = match.group(0) if match else ""
-            logging.info(f"[Validation] Scanned value '{orig}' matched: '{value}'")
 
-        # Bereichsprüfung (range)
-        if "range" in section and isinstance(value, str):
-            try:
-                val_f = float(value)
-                r_min, r_max = section["range"]
-                if not (r_min <= val_f <= r_max):
-                    logging.warning(f"[Validation] Value '{val_f}' for '{key}' out of range {r_min}–{r_max}")
-                    value = "?"
-            except Exception as e:
-                logging.warning(f"[Validation] Failed to check range for value '{value}': {e}")
-                value = "?"
-
-        # Vorwert-Prüfung (previous)
-        if "previous" in section and isinstance(value, str):
-            try:
-                val_f = float(value)
-                prev_val = value_last.get((identifier, key))
-                max_diff = section["previous"]
-
-                if prev_val is not None and abs(val_f - prev_val) > max_diff:
-                    logging.warning(f"[Validation] Value '{val_f}' for '{key}' differs too much from previous '{prev_val}' (>{max_diff})")
-                    value = ""
-                else:
-                    value_last[(identifier, key)] = val_f
-            except Exception as e:
-                logging.warning(f"[Validation] Failed to check previous for value '{value}': {e}")
-                value = ""
-
+        value = apply_matchtests(identifier, key, section, value)
 
         logging.info(f"[PIC Parsing] Final Value: {value}")
         results.append({
@@ -647,6 +653,21 @@ def test_config():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+import os
+
+@app.route("/upload-image", methods=["POST"])
+def upload_image():
+    if "image" not in request.files:
+        return jsonify({"error": "No image provided"}), 400
+
+    file = request.files["image"]
+    filename = secure_filename(file.filename)
+    
+    path = os.path.join("images", filename)
+    file.save(path)
+
+    return jsonify({"filename": filename})
 
 
 @app.route("/reload-config", methods=["POST"])
