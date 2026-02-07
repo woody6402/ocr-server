@@ -102,7 +102,8 @@ The `config.yaml` file defines how image segments are cut out, processed with mo
       ...
     postdecimal:
       - [x, y, w, h]       # digits after
-      ...```
+      ...
+```
 
 ### ✅ Validating
 | Option     | Beschreibung                                                               |
