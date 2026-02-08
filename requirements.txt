@@ -1,8 +1,9 @@
 flask
 pillow
-opencv-python
+opencv-python-headless
 pytesseract
 pyyaml
-tensorflow
 paho-mqtt
+numpy==1.26.4
+
 

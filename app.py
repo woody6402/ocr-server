@@ -1,20 +1,37 @@
-from flask import Flask, request, jsonify
 from PIL import Image
+from PIL import ImageEnhance, ImageOps, ImageFilter
+
 import pytesseract
 import os
 import yaml
 import uuid
-
-import numpy as np
-import tensorflow as tf
-from math import atan2, pi, fmod
 import logging
 import colorsys
+import re
+import string
+import json
 
+import numpy as np
+
+# import tensorflow as tf
+
+from tflite_runtime.interpreter import Interpreter
+
+from math import atan2, pi, fmod
+
+from flask import Flask, request, jsonify
 from flask import render_template
-from werkzeug.utils import secure_filename
 from flask import redirect, url_for
 from flask import send_from_directory
+
+from werkzeug.utils import secure_filename
+
+import paho.mqtt.publish as publish
+
+
+from transformations import apply_transformations  # Stelle sicher, dass du transformations.py hast
+
+
 
 MODEL_MAP = {
     "digital-cont": "dig-cont_0900_s3_q",
@@ -143,11 +160,6 @@ def run_color_model(image: Image.Image, model_name: str = "color") -> dict:
         "class": f"{int(rgb[0])},{int(rgb[1])},{int(rgb[2])}"
     }
 
-import numpy as np
-import tensorflow as tf
-from PIL import Image
-import logging
-import re
 
 def extract_num_classes(model_name: str) -> int:
     """Extrahiert die Anzahl der Klassen aus dem Modellnamen (z. B. 'class100')"""
@@ -156,7 +168,7 @@ def extract_num_classes(model_name: str) -> int:
 
 def run_digit_model(image: Image.Image, model_name: str) -> dict:
     model_path = f"models/{model_name}.tflite"
-    interpreter = tf.lite.Interpreter(model_path=model_path)
+    interpreter = Interpreter(model_path=model_path)
     interpreter.allocate_tensors()
 
     input_details = interpreter.get_input_details()
@@ -201,7 +213,7 @@ def run_digit_model(image: Image.Image, model_name: str) -> dict:
 
 def run_digit_model_x(image: Image.Image, model_name: str) -> dict:
     model_path = f"models/{model_name}.tflite"
-    interpreter = tf.lite.Interpreter(model_path=model_path)
+    interpreter = Interpreter(model_path=model_path)
     interpreter.allocate_tensors()
 
     input_details = interpreter.get_input_details()
@@ -230,7 +242,7 @@ def run_digit_model_x(image: Image.Image, model_name: str) -> dict:
 
 
 
-import pytesseract
+
 
 def run_tesseract_model(image: Image.Image, model_name: str = "tesseract") -> dict:
     try:
@@ -253,12 +265,9 @@ def digit_from_vector(f1: float, f2: float) -> float:
     normalized = fmod(raw_angle / (2 * pi) + 2, 1)
     return normalized * 10
 
-import string
+
 alphabet = string.digits + string.ascii_lowercase + '.'
 blank_index = len(alphabet)
-
-import numpy as np
-from PIL import Image
 
 
 def prepare_input_pil1(image: Image.Image, input_shape) -> np.ndarray:
@@ -303,7 +312,7 @@ def run_lcd_sequence_model(image: Image.Image, model_name: str) -> dict:
     model_path = f"models/{model_name}.tflite"
     
     if model_name not in interpreter_cache:
-        interpreter_cache[model_name] = tf.lite.Interpreter(model_path=model_path)
+        interpreter_cache[model_name] = Interpreter(model_path=model_path)
         interpreter_cache[model_name].allocate_tensors()
     interpreter = interpreter_cache[model_name]
         
@@ -340,7 +349,7 @@ def run_analog_model(image: Image.Image, model_name: str) -> dict:
     #interpreter.allocate_tensors()
     
     if model_name not in interpreter_cache:
-        interpreter_cache[model_name] = tf.lite.Interpreter(model_path=model_path)
+        interpreter_cache[model_name] = Interpreter(model_path=model_path)
         interpreter_cache[model_name].allocate_tensors()
     interpreter = interpreter_cache[model_name]
 
@@ -370,7 +379,6 @@ def run_analog_model(image: Image.Image, model_name: str) -> dict:
     }
 
 
-import re
 
 def is_valid_value(value: str, match_pattern: str) -> bool:
     if not isinstance(value, str):
@@ -380,9 +388,6 @@ def is_valid_value(value: str, match_pattern: str) -> bool:
     except re.error:
         return False
 
-
-from transformations import apply_transformations  # Stelle sicher, dass du transformations.py hast
-from PIL import ImageEnhance, ImageOps, ImageFilter
 
 
 def apply_enhancement(image, identifier, enhance_steps):
@@ -695,8 +700,7 @@ def represent_list(dumper, data):
 
 FlowStyleListDumper.add_representer(list, represent_list)
 
-import paho.mqtt.publish as publish
-import json
+
 
 def publish_results_to_mqtt(results: list, identifier: str, mqtt_config: dict):
     topic = mqtt_config.get("topic", f"meters/{identifier}")
