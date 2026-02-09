@@ -702,7 +702,7 @@ FlowStyleListDumper.add_representer(list, represent_list)
 
 
 
-def publish_results_to_mqtt(results: list, identifier: str, mqtt_config: dict):
+def publish_results_to_mqttX(results: list, identifier: str, mqtt_config: dict):
     topic = mqtt_config.get("topic", f"meters/{identifier}")
     payload = {
         "identifier": identifier,
@@ -721,6 +721,96 @@ def publish_results_to_mqtt(results: list, identifier: str, mqtt_config: dict):
     )
     
     logging.info(f"[MQTT:{topic}] Data:\n {payload}")
+
+
+import time
+import paho.mqtt.publish as publish
+import re
+
+def _sanitize_id(s: str) -> str:
+    # HA discovery IDs sollten simpel sein
+    s = s.strip().lower()
+    s = re.sub(r"[^a-z0-9_]+", "_", s)
+    return s.strip("_")
+
+def publish_discovery_for_identifier(identifier: str, definition: dict, mqtt_config: dict):
+    discovery_prefix = mqtt_config.get("discovery_prefix", "homeassistant")
+    ident = _sanitize_id(identifier)
+
+    # Device-Name optional aus config nehmen (falls du so ein Feld einführen willst)
+    dev_name = definition.get("name", f"OCR {identifier}")
+
+    state_topic = mqtt_config.get("state_topic", f"meters/{identifier}/state")
+
+    config_topic = f"{discovery_prefix}/sensor/ocr_{ident}/config"
+
+    payload = {
+        "name": dev_name,                       # Entity Name
+        "unique_id": f"ocr_{ident}",            # Muss global eindeutig sein
+        "state_topic": state_topic,
+        "value_template": "{{ value_json.ts }}",
+        "json_attributes_topic": state_topic,
+        "json_attributes_template": "{{  value_json['values'] | tojson }}",
+        "device": {
+            "identifiers": [f"ocr_server_{ident}"],
+            "name": dev_name,                   # Device Name
+            "manufacturer": "ocr-server",
+            "model": "ocr-server addon",
+            "sw_version": mqtt_config.get("sw_version", "1.0")
+        }
+    }
+
+    publish.single(
+        config_topic,
+        payload=json.dumps(payload),
+        hostname=mqtt_config["host"],
+        port=mqtt_config.get("port", 1883),
+        auth={
+            "username": mqtt_config.get("username"),
+            "password": mqtt_config.get("password")
+        } if "username" in mqtt_config else None,
+        retain=True
+    )
+
+def publish_results_to_mqtt(results: list, identifier: str, mqtt_config: dict):
+    # 1) Discovery (einmal pro identifier; retain macht’s idempotent)
+    definition = config.get(identifier, {})  # nutzt dein globales config dict :contentReference[oaicite:2]{index=2}
+    try:
+        publish_discovery_for_identifier(identifier, definition, mqtt_config)
+    except Exception as e:
+        logging.warning(f"[MQTT Discovery] Failed : {e}")
+
+    # 2) State payload so bauen, dass Attribute sinnvoll sind
+    state_topic = mqtt_config.get("state_topic", f"meters/{identifier}/state")
+
+    values_dict = {item["id"]: item.get("value") for item in results}
+
+    payload = {
+        "status": "ok",
+        "identifier": identifier,
+        "ts": int(time.time()),
+        "values": values_dict,
+        # optional: raw behalten
+        "raw_values": results
+    }
+    
+
+    publish.single(
+        state_topic,
+        payload=json.dumps(payload),
+        hostname=mqtt_config["host"],
+        port=mqtt_config.get("port", 1883),
+        auth={
+            "username": mqtt_config.get("username"),
+            "password": mqtt_config.get("password")
+        } if "username" in mqtt_config else None,
+        retain=False
+    )
+
+    logging.info(f"[MQTT:{state_topic}] Data:\n {payload}")
+
+
+
 
 
 if __name__ == "__main__":
